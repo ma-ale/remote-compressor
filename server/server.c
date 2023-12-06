@@ -4,5 +4,6 @@
 
 int main(void)
 {
+	printf("saluti dal server\n");
 	return 0;
 }
