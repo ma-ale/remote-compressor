@@ -27,7 +27,13 @@
 // - il comando "compress" può avere una lista opzionale di file da comprimere
 int client_process(int sd, struct sockaddr_in sa) { return 0; }
 
-int compress_folder(const char *path) { return 0; }
+// attraverso la funzione "system()" comprime la cartella dei file del client (path)
+// con l'algoritmo specificato in un archivio chiamato "archivio_compresso.tar.gz"
+// oppure "archivio_compresso.tar.bz2"
+int compress_folder(int sd, const char *path) { return 0; }
+
+// manda una risposta al client, se va tutto bene oppure no
+int send_response(int sd, );
 
 // il server spawna un processo figlioche gestisce un singolo client
 int main(int argc, char **argv) { return 0; }
