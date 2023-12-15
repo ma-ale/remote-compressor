@@ -8,14 +8,15 @@
 #include <errno.h>
 
 // stampa le funzioni disponibili
-void help(void)
-{
-	printf("Comandi disponibili:\n"
-	       "help:\n --> mostra l'elenco dei comandi disponibili\n"
-	       "add [file]\n --> invia il file specificato al server remoto\n"
-	       "compress [alg]\n --> riceve dal server remoto "
-	       "l'archivio compresso secondo l'algoritmo specificato\n"
-	       "quit\n --> disconnessione\n");
+void help(void) {
+	printf(
+		"Comandi disponibili:\n"
+		"help:\n --> mostra l'elenco dei comandi disponibili\n"
+		"add [file]\n --> invia il file specificato al server remoto\n"
+		"compress [alg]\n --> riceve dal server remoto "
+		"l'archivio compresso secondo l'algoritmo specificato\n"
+		"quit\n --> disconnessione\n"
+	);
 }
 
 // connettiti al server all'indizzo e porta specificata
@@ -23,8 +24,7 @@ void help(void)
 // port: porta del server
 // *sd: ritorna il socket descriptor
 // *sa: ritorna la struttura del socket
-int connect_to_server(const char *addr, int port, int *sd, struct sockaddr_in *sa)
-{
+int connect_to_server(const char *addr, int port, int *sd, struct sockaddr_in *sa) {
 	return 0;
 }
 
@@ -53,23 +53,21 @@ int receive_response(int sd) { return 0; }
 // server, nella posizione specificata da path (deve essere una cartella)
 int receive_file(int sd, const char *path) { return 0; }
 
-int main(int argc, char **argv)
-{
-
+int main(int argc, char **argv) {
 	// leggi gli argomenti dal terminale e determina l'indirizzo del server
 	// e la porta
 
 	// loop
 	while (1) {
 		const unsigned int CMD_MAX = 1024;
-		char		   comando[CMD_MAX];
+		char			   comando[CMD_MAX];
 		// prendi il comando da stdin
 		// dividi il comando in sotto stringhe divise da ' '
 		// "compress b" <- secondo argomento
 		//  ^^^^^^^^
 		//  primo argomento
 
-		char *cmd1; // primo argomento
+		char *cmd1;	 // primo argomento
 		if (strcmp(cmd1, "help")) {
 			help();
 		} else if (strcmp(cmd1, "quit")) {

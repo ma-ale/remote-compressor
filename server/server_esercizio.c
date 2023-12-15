@@ -21,22 +21,17 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-int process_client(int conn_sd)
-{
+int process_client(int conn_sd) {
 	ssize_t rcvd_bytes, snd_bytes;
 	while (1) {
 		// --- RICEZIONE LUNGHEZZA DELLA STRINGA --- //
 		int data_len;
 		rcvd_bytes = recv(conn_sd, &data_len, sizeof(int), 0);
 		if (rcvd_bytes < 0) {
-			fprintf(
-			    stderr,
-			    "Impossibile ricevere dati su socket: %s\n",
-			    strerror(errno)
-			);
+			fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
-		data_len = ntohl(data_len); // conversione a formato host
+		data_len = ntohl(data_len);	 // conversione a formato host
 		printf("Lunghezza stringa '%d'\n", data_len);
 
 		char *data = (char *)malloc(data_len + 1);
@@ -49,9 +44,7 @@ int process_client(int conn_sd)
 			rcvd_bytes = recv(conn_sd, buff, 1, 0);
 			if (rcvd_bytes < 0) {
 				fprintf(
-				    stderr,
-				    "Impossibile ricevere dati su socket: %s\n",
-				    strerror(errno)
+					stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno)
 				);
 				exit(EXIT_FAILURE);
 			}
@@ -68,11 +61,7 @@ int process_client(int conn_sd)
 		// --- INVIO RISPOSTA --- //
 		snd_bytes = send(conn_sd, "OK", 2, 0);
 		if (snd_bytes < 0) {
-			fprintf(
-			    stderr,
-			    "Impossibile inviare dati su socket: %s\n",
-			    strerror(errno)
-			);
+			fprintf(stderr, "Impossibile inviare dati su socket: %s\n", strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 		printf("Risposta inviata\n");
@@ -90,20 +79,17 @@ int process_client(int conn_sd)
 	return 0;
 }
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
 	(void)argc;
 	(void)argv;
 	char *addr_str = "127.0.0.1";
-	int   port_no  = 10000;
+	int	  port_no  = 10000;
 
 	// --- CREAZIONE SOCKET --- //
 	int sd;
 	sd = socket(AF_INET, SOCK_STREAM, 0);
 	if (sd < 0) {
-		fprintf(
-		    stderr, "Impossibile creare il socket: %s\n", strerror(errno)
-		);
+		fprintf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -112,18 +98,14 @@ int main(int argc, char *argv[])
 	// conversione dell'indirizzo in formato numerico
 	in_addr_t address;
 	if (inet_pton(AF_INET, addr_str, (void *)&address) < 0) {
-		fprintf(
-		    stderr,
-		    "Impossibile convertire l'indirizzo: %s\n",
-		    strerror(errno)
-		);
+		fprintf(stderr, "Impossibile convertire l'indirizzo: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	// preparazione della struttura contenente indirizzo IP e porta
 	struct sockaddr_in sa;
 	sa.sin_family	   = AF_INET;
-	sa.sin_port	   = htons(port_no);
+	sa.sin_port		   = htons(port_no);
 	sa.sin_addr.s_addr = address;
 
 	// DEBUG
@@ -133,9 +115,7 @@ int main(int argc, char *argv[])
 	// associazione indirizzo a socket
 	if (bind(sd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
 		fprintf(
-		    stderr,
-		    "Impossibile associare l'indirizzo a un socket: %s\n",
-		    strerror(errno)
+			stderr, "Impossibile associare l'indirizzo a un socket: %s\n", strerror(errno)
 		);
 		exit(EXIT_FAILURE);
 	}
@@ -145,9 +125,7 @@ int main(int argc, char *argv[])
 	// --- LISTENING --- //
 	if (listen(sd, 10) < 0) {
 		fprintf(
-		    stderr,
-		    "Impossibile mettersi in attesa su socket: %s\n",
-		    strerror(errno)
+			stderr, "Impossibile mettersi in attesa su socket: %s\n", strerror(errno)
 		);
 		exit(EXIT_FAILURE);
 	}
@@ -155,19 +133,18 @@ int main(int argc, char *argv[])
 	// --- ATTESA DI CONNESSIONE --- //
 	printf("--- In attesa di connessione ---\n");
 
-	int		   conn_sd;
+	int				   conn_sd;
 	struct sockaddr_in client_addr;
-	char		   client_addr_str[INET_ADDRSTRLEN];
+	char			   client_addr_str[INET_ADDRSTRLEN];
 
 	while (1) {
 		socklen_t client_addr_len = sizeof(client_addr);
-		conn_sd =
-		    accept(sd, (struct sockaddr *)&client_addr, &client_addr_len);
+		conn_sd = accept(sd, (struct sockaddr *)&client_addr, &client_addr_len);
 		if (conn_sd < 0) {
 			fprintf(
-			    stderr,
-			    "Impossibile accettare connessione su socket: %s\n",
-			    strerror(errno)
+				stderr,
+				"Impossibile accettare connessione su socket: %s\n",
+				strerror(errno)
 			);
 			exit(EXIT_FAILURE);
 			// continue;
@@ -175,31 +152,18 @@ int main(int argc, char *argv[])
 
 		// conversione dell'indirizzo in formato numerico
 		const char *res = inet_ntop(
-		    AF_INET,
-		    &client_addr.sin_addr.s_addr,
-		    client_addr_str,
-		    INET_ADDRSTRLEN
+			AF_INET, &client_addr.sin_addr.s_addr, client_addr_str, INET_ADDRSTRLEN
 		);
 		if (res == NULL) {
-			fprintf(
-			    stderr,
-			    "Impossibile convertire l'indirizzo: %s\n",
-			    strerror(errno)
-			);
+			fprintf(stderr, "Impossibile convertire l'indirizzo: %s\n", strerror(errno));
 		} else {
-			printf(
-			    "Connesso col client %s:%d\n",
-			    addr_str,
-			    ntohs(client_addr.sin_port)
-			);
+			printf("Connesso col client %s:%d\n", addr_str, ntohs(client_addr.sin_port));
 		}
 
 		pid_t pid;
 		if ((pid = fork()) < 0) {
 			fprintf(
-			    stderr,
-			    "Impossibile creare un processo figlio: %s\n",
-			    strerror(errno)
+				stderr, "Impossibile creare un processo figlio: %s\n", strerror(errno)
 			);
 			close(conn_sd);
 			close(sd);
@@ -212,9 +176,7 @@ int main(int argc, char *argv[])
 			// processo genitore
 			if (wait(NULL) < 0) {
 				fprintf(
-				    stderr,
-				    "Impossibile creare un processo figlio: %s\n",
-				    strerror(errno)
+					stderr, "Impossibile creare un processo figlio: %s\n", strerror(errno)
 				);
 			}
 			printf("Il processo %d ha terminato", pid);
