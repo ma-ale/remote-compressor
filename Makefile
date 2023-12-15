@@ -1,10 +1,17 @@
 CFLAGS = -g -std=c99 -Wall -Wextra -pedantic
 
-all: client/client server/server
+# regole di progetto
 
-client/client: client/client.c
+esercizio: server/server_esercizio client/client_esercizio
 
-server/server: server/server.c
+rcomp: client/rcomp_client server/rcomp_server
 
-clean:
-	rm -f client server
+# regole file sorgente
+
+client/rcomp_client: client/rcomp_client.c
+
+server/rcomp_server: server/rcomp_server.c
+
+server/server_esercizio: server/server_esercizio.c
+
+client/client_esercizio: client/client_esercizio.c
