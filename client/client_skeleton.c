@@ -19,6 +19,32 @@ void help(void) {
 	);
 }
 
+/* * * * * * * * NOTA: per la questione della CTRL+C * * * * * * * */
+// si deve usare la signal dando un handler alla gestione del segnale SIGINT.
+// siccome non accetta argomenti, devo trovare un modo per poter pulire i socket aperti
+// senza passare il socket descriptor all'handler della SIGINT
+// ci sono quattro soluzioni che abbiamo trovato:
+// [1] soluzione per i neurotipici: socket descriptor globali
+//     quando ricevo ^C posso fare la quit usando il sd senza bisogno di argomenti
+// [2] soluzione polling: l'handler setta una flag a 1 che controllo nella main, not great
+// [3] soluzione non ISO C compliant molto bellina che ho fatto io quindi la migliore uwu
+//     creo una quit che viene definita nella main, che quindi vede sd che sta nella main
+/*	   void quit();
+		...
+	   int main(){
+		...
+		//dopo aver creato il socket:
+			void quit() {
+			close(sd);
+			printf("ho chiuso il socket\n");
+			exit(EXIT_SUCCESS);
+			}
+		...
+		}
+*/
+// comunque vedere provaquit.c nel client per la prova di funzionamento
+// [4] soluzione flex assurdo
+
 // connettiti al server all'indizzo e porta specificata
 // addr: stringa che contiene l'indirzzo ip del server a cui connettersi
 // port: porta del server

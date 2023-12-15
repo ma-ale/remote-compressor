@@ -12,3 +12,6 @@ server/rcomp_server.exe
 client/rcomp_client.exe
 server/rcomp_server
 client/rcomp_client
+
+client/provaquit.exe
+client/provaquit
