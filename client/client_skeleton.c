@@ -44,6 +44,35 @@ void help(void) {
 */
 // comunque vedere provaquit.c nel client per la prova di funzionamento
 // [4] soluzione flex assurdo
+//     siccome quando premo ctrl+c voglio semplicemente eseguire la funzionalità del
+//     comando "quit" allora l'idea sarebbe mandare a me stesso questo comando in input
+//     dall'handler del segnale, salta fuori che questa cosa la posso fare:
+/*
+	void signint_handler(int sig) {
+		// scarta sig tanto non ci serve
+		(void)sig;
+
+		// creo una pipe, lo devo fare perchè non posso scrivere su stdin
+		// siccome è aperto in sola lettura
+		int fd[2];
+		pipe(fd);
+
+		// adesso viene il bello: chiudo l'stdin esistente e lo rimpiazzo
+		// con il lato della pipe che può essere letto, in questo modo
+		// le chiamate scanf(), gets(), getc(), etc. che leggono da stdin
+		// in realtà leggeranno da questa pipe
+		fclose(stdin);
+		dup2(fd[0], fileno(stdin));
+
+		// ora posso scrivere nell'altro lato della pipe il comando da
+		// processare, in questo caso voglio uscire quindi scrivo "quit"
+		dprintf(fd[1], "quit\n");
+
+		// quindi posso uscire, il controllo verrà riassunto dal loop principale
+		// che vedendo il comando quit uscirà in modo carino e coccoloso
+		return;
+	}
+*/
 
 // connettiti al server all'indizzo e porta specificata
 // addr: stringa che contiene l'indirzzo ip del server a cui connettersi
