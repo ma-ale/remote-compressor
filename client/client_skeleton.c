@@ -40,6 +40,7 @@ void help(void) {
 			exit(EXIT_SUCCESS);
 			}
 		...
+		signal(SIGINT, quit);
 		}
 */
 // comunque vedere provaquit.c nel client per la prova di funzionamento
@@ -74,20 +75,24 @@ void help(void) {
 	}
 */
 
-// connettiti al server all'indizzo e porta specificata
-// addr: stringa che contiene l'indirzzo ip del server a cui connettersi
-// port: porta del server
-// *sd: ritorna il socket descriptor
-// *sa: ritorna la struttura del socket
-int connect_to_server(const char *addr, int port, int *sd, struct sockaddr_in *sa) {
-	return 0;
-}
+int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa);
 
+// FATTO!
+
+// connettiti al server all'indizzo e porta specificata
+// sd: socket descriptor
+// *sa: ritorna la struttura del socket e contiene porta e indirizzo
+
+int connect_to_server(int sd, struct sockaddr_in *sa) { return 0; }	 // FATTO!
+
+// legge il comando inserito dall'utente, separando comando da eventuali argomenti
+// ritorna -1 se il comando non viene riconosciuto o ci sono troppi o pochi argomenti
+int read_command(const char *str, const char **com, const char **arg);	//-> ALE
 // manda un comando testuale al server come "quit" e "compress"
 // sd: descriptor del socket
 // str: stringa che contiene il comando
 // esempio: send_command(sd, "exit");
-int send_command(int sd, const char *str);
+int send_command(int sd, const char *com, const char *arg);
 
 // manda un file al server specificando il suo percorso
 // sd: descriptor del socket
@@ -96,15 +101,48 @@ int send_command(int sd, const char *str);
 // ritorna 0 se successo o -1 per fallimento
 int send_file(int sd, const char *path) { return 0; }
 
+/*
+	// conversione a formato network (da big endian a little endian)
+		int msg_len = htonl(data_len);
+		snd_bytes	= send(sd, &msg_len, sizeof(int), 0);
+		if (snd_bytes < 0) {
+			fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+		printf("Inviati %ld bytes\n", snd_bytes);
+
+		// --- INVIO MESSAGGIO --- //
+		// manda il messaggio byte per byte
+		size_t bytes_sent = 0;
+		while (1) {
+			char buff[1];
+			buff[0]	  = data[bytes_sent];
+			snd_bytes = send(sd, buff, 1, 0);
+			if (snd_bytes < 0) {
+				fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+			bytes_sent += snd_bytes;
+			if (bytes_sent >= (size_t)data_len) {
+				break;
+			}
+		}
+		printf("Inviati %ld bytes\n", bytes_sent);
+
+
+
+*/
+
 // dato un file, ad esempio tramite FILE*, descriptor o percorso, ne determina la
-// dimensione, in caso di errore rirorna negativo
-ssize_t file_dimension(void) { return 0; }
+// dimensione, in caso di errore ritorna negativo con la stat
+// tramite path
+ssize_t file_dimension(const char *path) { return 0; }	//-> CLIO
 
 // aspetta un messaggio di risposta dal server, ritorna 0 se "OK"
 // oppure negativo se ci sono stati errori o "NON OK"
-int receive_response(int sd) { return 0; }
+int receive_response(int sd) { return 0; }	// FATTO!
 
-// apetta un file dal server e lo immagazzina nel file di nome specificato dal
+// aspetta un file dal server e lo immagazzina nel file di nome specificato dal
 // server, nella posizione specificata da path (deve essere una cartella)
 int receive_file(int sd, const char *path) { return 0; }
 
