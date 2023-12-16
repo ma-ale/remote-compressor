@@ -136,7 +136,26 @@ int send_file(int sd, const char *path) { return 0; }
 // dato un file, ad esempio tramite FILE*, descriptor o percorso, ne determina la
 // dimensione, in caso di errore ritorna negativo con la stat
 // tramite path
-ssize_t file_dimension(const char *path) { return 0; }	//-> CLIO
+ssize_t file_dimension(const char *path) { //CLIO
+
+    // recupero dei metadati del file
+    struct stat file_stat;
+    if ( stat(path, &file_stat) < 0){
+        fprintf(stderr, "Errore nella lettura delle informazioni del file %s\n", file_name);
+        return -1;
+    }
+
+	// se il file e' un file regolare, visualizza la sua dimensione
+    if (S_ISREG(file_stat.st_mode) > 0){
+        ssize_t file_size = file_stat.st_size;
+    }
+    else{
+        printf("Il file non e' un file regolare\n");
+        return -1;
+    }
+    return 0;
+
+}	//FATTO (SPERO)
 
 // aspetta un messaggio di risposta dal server, ritorna 0 se "OK"
 // oppure negativo se ci sono stati errori o "NON OK"
@@ -195,11 +214,13 @@ int main(int argc, char **argv) {
 			// path     filename
 
 			if (send_file(sd, file) < 0) {
-				// errore nel trasferimento del file
+				fprintf(stderr, "Errore nel trasferimento del file %s\n", file_name);
+				return -1;
 			}
 
 			if (receive_response(sd) < 0) {
-				// errore ricevuto dal server
+				fprintf(stderr, "Errore ricevuto dal server %s\n", file_name);
+				return -1;
 			}
 		}
 	}
