@@ -6,6 +6,29 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+int read_command(char *str, const char **com, const char **arg) {
+	char *command = NULL, *argument = NULL, *tmp;
+	char **saveptr;
+	int argc = 0;
+
+	// divido la stringa in token divisi da spazi, salvo il primo come comando
+	// e il secondo come argomento
+	for (; (tmp = strtok_r(str, " ", saveptr)) != NULL; argc++) {
+		if (argc == 0) {
+			command = tmp; 
+		} else if (argc == 1) {
+			argument = tmp;
+		} else {
+			fprintf(stderr, "Argomento di troppo: [%d] = '%s'\n", argc, tmp);
+		}
+	}
+
+	*com = command;
+	*arg = argument;
+	// ritorno il numero di argomenti trovati
+	return argc;
+}
+
 int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa) {
 	*sd = socket(AF_INET, SOCK_STREAM, 0);
 	if (*sd < 0) {
