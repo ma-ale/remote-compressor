@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
@@ -30,8 +31,27 @@ int read_command(char *str, const char **com, const char **arg) {
 	return argc;
 }
 
+ssize_t file_dimension(const char *path) {
+	// recupero dei metadati del file
+	struct stat file_stat;
+	if (stat(path, &file_stat) < 0) {
+		fprintf(stderr, "Errore nella lettura delle informazioni del file %s\n", path);
+		return -1;
+	}
+
+	// se il file e' un file regolare, visualizza la sua dimensione
+	ssize_t file_size;
+	if (S_ISREG(file_stat.st_mode) > 0) {
+		file_size = file_stat.st_size;
+	} else {
+		printf("Il file non e' un file regolare\n");
+		return -1;
+	}
+	return file_size;
+}
+
 int send_file(int sd, const char *path) {
-	ssize_t file_dim = file_dimensions(path);
+	ssize_t file_dim = file_dimension(path);
 	if (file_dim < 0) {
 		// l'errore specifico viene stampato da file_dimension()
 		// il server si aspetta un file quindi gli devo mandare qualcosa
