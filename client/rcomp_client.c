@@ -21,7 +21,8 @@ int read_command(char *str, const char **com, const char **arg) {
 		} else if (argc == 1) {
 			argument = tmp;
 		} else {
-			fprintf(stderr, "Argomento di troppo: [%d] = '%s'\n", argc, tmp);
+			// se ne sta trovando piu' di 2
+			return -1;
 		}
 	}
 
@@ -72,8 +73,8 @@ int send_file(int sd, const char *path) {
 
 	uint32_t msg_len = htonl(file_dim);
 
-	size_t snd_bytes = send(sd, &msg_len, sizeof(uint32_t), 0);
-	if (snd_bytes < 0) {
+	size_t sent_bytes = send(sd, &msg_len, sizeof(uint32_t), 0);
+	if (sent_bytes < 0) {
 		fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
 		return -1;
 	}
@@ -88,13 +89,13 @@ int send_file(int sd, const char *path) {
 		if (c == EOF) {
 			break;
 		}
-		buff[0]	  = c;
-		snd_bytes = send(sd, buff, 1, 0);
-		if (snd_bytes < 0) {
+		buff[0]	   = c;
+		sent_bytes = send(sd, buff, 1, 0);
+		if (sent_bytes < 0) {
 			fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
 			return -1;
 		}
-		bytes_sent += snd_bytes;
+		bytes_sent += sent_bytes;
 		if (bytes_sent >= (size_t)file_dim) {
 			break;
 		}
@@ -216,26 +217,26 @@ int receive_file(int sd, char ext) {
 int send_command(int sd, const char *com, const char *arg) {
 	// --- INVIO LUNGHEZZA --- //
 	// conversione a formato network (da big endian a little endian)
-	size_t com_len	 = strlen(com);
-	int	   msg_len	 = htonl(com_len);
-	size_t snd_bytes = send(sd, &msg_len, sizeof(int), 0);
-	if (snd_bytes < 0) {
+	size_t com_len	  = strlen(com);
+	int	   msg_len	  = htonl(com_len);
+	size_t sent_bytes = send(sd, &msg_len, sizeof(int), 0);
+	if (sent_bytes < 0) {
 		fprintf(stderr, "Impossibile inviare dati comando: %s\n", strerror(errno));
 		return (-1);
 	}
-	printf("Inviati %ld bytes di lunghezza comando\n", snd_bytes);
+	printf("Inviati %ld bytes di lunghezza comando\n", sent_bytes);
 	// --- INVIO COMANDO --- //
 	// manda il comando byte per byte
 	size_t bytes_sent = 0;
 	char   buff[1];
 	while (1) {
-		buff[0]	  = com[bytes_sent];
-		snd_bytes = send(sd, buff, 1, 0);
-		if (snd_bytes < 0) {
+		buff[0]	   = com[bytes_sent];
+		sent_bytes = send(sd, buff, 1, 0);
+		if (sent_bytes < 0) {
 			fprintf(stderr, "Impossibile inviare dati comando: %s\n", strerror(errno));
 			return (-1);
 		}
-		bytes_sent += snd_bytes;
+		bytes_sent += sent_bytes;
 		if (bytes_sent == (size_t)com_len) {
 			break;
 		} else if (bytes_sent > (size_t)com_len) {
@@ -257,36 +258,137 @@ int send_command(int sd, const char *com, const char *arg) {
 	// conversione a formato network (da big endian a little endian)
 	size_t arg_len = strlen(arg);
 	msg_len		   = htonl(arg_len);
-	snd_bytes	   = send(sd, &msg_len, sizeof(int), 0);
-	if (snd_bytes < 0) {
+	sent_bytes	   = send(sd, &msg_len, sizeof(int), 0);
+	if (sent_bytes < 0) {
 		fprintf(stderr, "Impossibile inviare dati argomento: %s\n", strerror(errno));
 		return (-1);
 	}
-	printf("Inviati %ld bytes di lunghezza argomento\n", snd_bytes);
+	printf("Inviati %ld bytes di lunghezza argomento\n", sent_bytes);
 	// --- INVIO ARGOMENTO --- //
 
 	// manda l'argomento byte per byte
-	bytes_sent = 0;
+	sent_tot = 0;
 	while (1) {
-		buff[0]	  = arg[bytes_sent];
-		snd_bytes = send(sd, buff, 1, 0);
-		if (snd_bytes < 0) {
+		buff[0]	   = arg[sent_tot];
+		sent_bytes = send(sd, buff, 1, 0);
+		if (sent_bytes < 0) {
 			fprintf(stderr, "Impossibile inviare dati argomento: %s\n", strerror(errno));
 			return (-1);
 		}
-		bytes_sent += snd_bytes;
-		if (bytes_sent == (size_t)arg_len) {
+		sent_tot += sent_bytes;
+		if (sent_tot == (size_t)arg_len) {
 			break;
-		} else if (bytes_sent > (size_t)arg_len) {
+		} else if (sent_tot > (size_t)arg_len) {
 			printf(
 				"Invio argomento fallito: inviati %ld byte in piu' della dimensione "
 				"dell' argomento\n",
-				(bytes_sent - arg_len)
+				(sent_tot - arg_len)
 			);
 			return (-1);
 		}
 	}
-	printf("Inviati %ld bytes di argomento\n", bytes_sent);
+	printf("Inviati %ld bytes di argomento\n", sent_tot);
+
+	return 0;
+}
+
+void help(void) {
+	printf(
+		"Comandi disponibili:\n"
+		"help:\n --> mostra l'elenco dei comandi disponibili\n"
+		"add [file]\n --> invia il file specificato al server remoto\n"
+		"compress [alg]\n --> riceve dal server remoto "
+		"l'archivio compresso secondo l'algoritmo specificato\n"
+		"quit\n --> disconnessione\n"
+	);
+}
+
+int main(int argc, char *argv[]) {
+	// leggi gli argomenti dal terminale e determina l'indirizzo del server
+	// e la porta
+	//		argv[1] = indirizzo
+	//		argv[2] = porta
+	// metto di default porta e indirizzo se argc < 3
+	(void)argc;
+	(void)argv;
+	// TODO: prendi l'indirizzo e la porta da riga di comando
+
+	if (argc < 3) {
+		const char *addr_str = "127.0.0.1";
+		const int	port_no	 = 10000;
+	} else {
+		char *addr_str;
+		if (strcpy(*addr_str, argv[1]) < 0) {
+			fprintf(stderr, "Impossibile assegnare argomento: %s\n", strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+		int port_no;
+		port_no = argv[2];
+	}
+	// loop
+	while (1) {
+		const unsigned int CMD_MAX = 1024;
+		char			   userinput[CMD_MAX];
+		printf("Inserire comando:\n");
+		if (scanf("%1023s", &userinput) < 0) {
+			fprintf(stderr, "Impossibile accettare comando: %s\n", strerror(errno));
+			continue;
+		}
+		// dividi il comando in sotto stringhe divise da ' '
+		// "compress b" <- secondo argomento
+		//  ^^^^^^^^
+		//  primo argomento
+		char *cmd;
+		char *arg;
+		if (read_command(userinput, &cmd, &arg) < 0) {
+			fprintf(stderr, "Argomento di troppo: [%d] = '%s'\n", argc, tmp);
+			continue;
+		}
+
+		if (strcmp(cmd, "help")) {
+			help();
+		} else if (strcmp(cmd, "quit")) {
+			send_command(sd, "quit");
+			close(sd);
+			exit(EXIT_SUCCESS);
+		} else if (strcmp(cmd, "compress")) {
+			char algoritmo = 'z';
+
+			// se esiste un secondo argomento sostituiscilo ad
+			// "algoritmo", gli passo direttamente z o j il nome
+			// dell'archivio viene scelto automaticamente dal server
+			// archivio come enum??
+			if (algoritmo == 'z') {
+				// comprimi con algoritmo gzip
+				send_command(sd, "cz");
+			} else if (algoritmo == 'j') {
+				// comprimi con algoritmo bzip2
+				send_command(sd, "cj");
+			} else {
+				// errore
+			}
+		} else if (strcmp(cmd, "add")) {
+			char *file;
+			// mette in file il secondo argomento
+			// verifica che il nome del file sia composto solamente
+			// da [a-z]|[A-Z]|[0-9]|(.)
+			// opzionale: accetta file con path relativo o assoluto,
+			// significa dover separare il nome del file dal suo path
+			// /path/to/file
+			// ^^^^^^^^ ^^^^
+			// path     filename
+
+			if (send_file(sd, file) < 0) {
+				fprintf(stderr, "Errore nel trasferimento del file %s\n", file_name);
+				return -1;
+			}
+
+			if (receive_response(sd) < 0) {
+				fprintf(stderr, "Errore ricevuto dal server %s\n", file_name);
+				return -1;
+			}
+		}
+	}
 
 	return 0;
 }

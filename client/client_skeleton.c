@@ -102,38 +102,6 @@ int send_command(int sd, const char *com, const char *arg);
 // ritorna 0 se successo o -1 per fallimento
 int send_file(int sd, const char *path) { return 0; }
 
-/*
-	// conversione a formato network (da big endian a little endian)
-		int msg_len = htonl(data_len);
-		snd_bytes	= send(sd, &msg_len, sizeof(int), 0);
-		if (snd_bytes < 0) {
-			fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-		printf("Inviati %ld bytes\n", snd_bytes);
-
-		// --- INVIO MESSAGGIO --- //
-		// manda il messaggio byte per byte
-		size_t bytes_sent = 0;
-		while (1) {
-			char buff[1];
-			buff[0]	  = data[bytes_sent];
-			snd_bytes = send(sd, buff, 1, 0);
-			if (snd_bytes < 0) {
-				fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
-				exit(EXIT_FAILURE);
-			}
-			bytes_sent += snd_bytes;
-			if (bytes_sent >= (size_t)data_len) {
-				break;
-			}
-		}
-		printf("Inviati %ld bytes\n", bytes_sent);
-
-
-
-*/
-
 // dato un file, ad esempio tramite FILE*, descriptor o percorso, ne determina la
 // dimensione, in caso di errore ritorna negativo con la stat
 // tramite path
@@ -150,7 +118,8 @@ int receive_file(int sd, const char *path) { return 0; }
 int main(int argc, char **argv) {
 	// leggi gli argomenti dal terminale e determina l'indirizzo del server
 	// e la porta
-
+	// 		argv[1] = indirizzo
+	//		argv[2] = porta
 	// loop
 	while (1) {
 		const unsigned int CMD_MAX = 1024;
@@ -182,7 +151,7 @@ int main(int argc, char **argv) {
 				// comprimi con algoritmo bzip2
 				send_command(sd, "cj");
 			} else {
-                fprintf(stderr, "Errore algoritmo inesistente %s\n", file_name);
+				fprintf(stderr, "Errore algoritmo inesistente %s\n", file_name);
 				return -1;
 			}
 		} else if (strcmp(cmd1, "add")) {
