@@ -153,7 +153,7 @@ ssize_t file_dimension(const char *path) { //CLIO
         printf("Il file non e' un file regolare\n");
         return -1;
     }
-    return 0;
+    return file_size;
 
 }	//FATTO (SPERO)
 
