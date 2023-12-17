@@ -200,7 +200,8 @@ int main(int argc, char **argv) {
 				// comprimi con algoritmo bzip2
 				send_command(sd, "cj");
 			} else {
-				// errore
+                fprintf(stderr, "Errore algoritmo inesistente %s\n", file_name);
+				return -1;
 			}
 		} else if (strcmp(cmd1, "add")) {
 			char *file;

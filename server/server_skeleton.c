@@ -8,9 +8,11 @@
 #include <errno.h>
 
 // il processo per client fa le seguenti cose:
-// 1 - crea una cartella nominata come il suo pid
-// 2 - aspetta di ricevere file o comandi
-// 3 - se riceve un file crea tale file nella sua cartella e lo riempie con il
+// 1 - aspetta di ricevere comandi
+// 2 - l'add crea una cartella nominata col pid del client
+//     (in genere la add cotrolla se c'è già la cartella o no, se c'è mette
+//      direttamente lì il file)
+// 3 - l'add riceve un file crea tale file nella sua cartella e lo riempie con il
 //     file ricevuto byte per byte
 //     3.1 - riceve il file dalla rete byte per byte scrivendolo su un buffer
 //           temporaneo in memoria, quando questo buffer si riempie o tutto il
