@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <limits.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
@@ -30,8 +31,27 @@ int read_command(char *str, const char **com, const char **arg) {
 	return argc;
 }
 
+ssize_t file_dimension(const char *path) {
+	// recupero dei metadati del file
+	struct stat file_stat;
+	if (stat(path, &file_stat) < 0) {
+		fprintf(stderr, "Errore nella lettura delle informazioni del file %s\n", path);
+		return -1;
+	}
+
+	// se il file e' un file regolare, visualizza la sua dimensione
+	ssize_t file_size;
+	if (S_ISREG(file_stat.st_mode) > 0) {
+		file_size = file_stat.st_size;
+	} else {
+		printf("Il file non e' un file regolare\n");
+		return -1;
+	}
+	return file_size;
+}
+
 int send_file(int sd, const char *path) {
-	ssize_t file_dim = file_dimensions(path);
+	ssize_t file_dim = file_dimension(path);
 	if (file_dim < 0) {
 		// l'errore specifico viene stampato da file_dimension()
 		// il server si aspetta un file quindi gli devo mandare qualcosa
@@ -113,18 +133,78 @@ int connect_to_server(int sd, struct sockaddr_in *sa) {
 // aspetta un messaggio di risposta dal server, ritorna 0 se "OK"
 // oppure negativo se ci sono stati errori o "NON OK"
 int receive_response(int sd) {
-	char resp[3];
+	ssize_t rcvd_bytes;
+	char	resp[3];
 	rcvd_bytes = recv(sd, &resp, 2, 0);
 	if (rcvd_bytes < 0) {
 		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
 		return (-1);
 	}
 	resp[rcvd_bytes] = '\0';
-	if (strcomp(resp, "OK") != 0) {
+	if (strcmp(resp, "OK") != 0) {
 		fprintf(stderr, "Server segnala il seguente errore: %s\n", resp);
 		return (-1);
 	}
 	printf("Ricevuto l'OK dal server/n");
+
+	return 0;
+}
+
+// path specifica il nome ed il percorso del file
+int receive_file(int sd, char ext) {
+	char path[64] = "archivio_compresso.tar";
+	if (ext == 'z') {
+		strcat(path, ".gz");
+	} else if (ext == 'j') {
+		strcat(path, ".bz2");
+	} else {
+		fprintf(stderr, "Estensione file non riconosciuta: %c\n", ext);
+		return -1;
+	}
+
+	// apri o crea il file specificato da path in scrittura, troncato a zero
+	FILE *file = fopen(path, "w+");
+	if (file == NULL) {
+		fprintf(stderr, "Impossibile aprire il file: %s\n", strerror(errno));
+		return -1;
+	}
+
+	// --- RICEZIONE LUNGHEZZA FILE --- //
+	int msg_len = 0, file_dim = 0;
+	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
+		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
+		return -1;
+	}
+	file_dim = ntohl(msg_len);
+	printf("Ricevuti %d byte di lunghezza del file\n", file_dim);
+
+	// --- RICEZIONE FILE --- //
+	char	buff[1];
+	ssize_t rcvd_bytes = 0;
+	ssize_t recv_tot   = 0;
+	while (recv_tot < (ssize_t)file_dim) {
+		if ((rcvd_bytes = recv(sd, &buff, 1, 0)) < 0) {
+			fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
+			fclose(file);
+			remove(path);
+			return -1;
+		}
+		fputc(buff[0], file);
+		recv_tot += rcvd_bytes;
+	}
+
+	fclose(file);
+	if (recv_tot != (ssize_t)file_dim) {
+		printf(
+			"Ricezione del file fallita: ricevuti %ld byte in piu' della dimensione "
+			"del file\n",
+			(recv_tot - file_dim)
+		);
+		remove(path);
+		return -1;
+	} else {
+		printf("Ricevuti %ld byte di file\n", recv_tot);
+	}
 
 	return 0;
 }
