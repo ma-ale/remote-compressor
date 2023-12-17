@@ -150,6 +150,65 @@ int receive_response(int sd) {
 	return 0;
 }
 
+// path specifica il nome ed il percorso del file
+int receive_file(int sd, char ext) {
+	char path[64] = "archivio_compresso.tar";
+	if (ext == 'z') {
+		strcat(path, ".gz");
+	} else if (ext == 'j') {
+		strcat(path, ".bz2");
+	} else {
+		fprintf(stderr, "Estensione file non riconosciuta: %c\n", ext);
+		return -1;
+	}
+
+	// apri o crea il file specificato da path in scrittura, troncato a zero
+	FILE *file = fopen(path, "w+");
+	if (file == NULL) {
+		fprintf(stderr, "Impossibile aprire il file: %s\n", strerror(errno));
+		return -1;
+	}
+
+	// --- RICEZIONE LUNGHEZZA FILE --- //
+	int msg_len = 0, file_dim = 0;
+	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
+		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
+		return -1;
+	}
+	file_dim = ntohl(msg_len);
+	printf("Ricevuti %d byte di lunghezza del file\n", file_dim);
+
+	// --- RICEZIONE FILE --- //
+	char	buff[1];
+	ssize_t rcvd_bytes = 0;
+	ssize_t recv_tot   = 0;
+	while (recv_tot < (ssize_t)file_dim) {
+		if ((rcvd_bytes = recv(sd, &buff, 1, 0)) < 0) {
+			fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
+			fclose(file);
+			remove(path);
+			return -1;
+		}
+		fputc(buff[0], file);
+		recv_tot += rcvd_bytes;
+	}
+
+	fclose(file);
+	if (recv_tot != (ssize_t)file_dim) {
+		printf(
+			"Ricezione del file fallita: ricevuti %ld byte in piu' della dimensione "
+			"del file\n",
+			(recv_tot - file_dim)
+		);
+		remove(path);
+		return -1;
+	} else {
+		printf("Ricevuti %ld byte di file\n", recv_tot);
+	}
+
+	return 0;
+}
+
 // manda un comando testuale al server come "quit" e "compress"
 // sd: descriptor del socket
 // str: stringa che contiene il comando
