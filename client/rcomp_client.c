@@ -133,14 +133,15 @@ int connect_to_server(int sd, struct sockaddr_in *sa) {
 // aspetta un messaggio di risposta dal server, ritorna 0 se "OK"
 // oppure negativo se ci sono stati errori o "NON OK"
 int receive_response(int sd) {
-	char resp[3];
+	ssize_t rcvd_bytes;
+	char	resp[3];
 	rcvd_bytes = recv(sd, &resp, 2, 0);
 	if (rcvd_bytes < 0) {
 		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
 		return (-1);
 	}
 	resp[rcvd_bytes] = '\0';
-	if (strcomp(resp, "OK") != 0) {
+	if (strcmp(resp, "OK") != 0) {
 		fprintf(stderr, "Server segnala il seguente errore: %s\n", resp);
 		return (-1);
 	}
