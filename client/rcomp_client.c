@@ -312,19 +312,20 @@ int main(int argc, char *argv[]) {
 	(void)argc;
 	(void)argv;
 	// TODO: prendi l'indirizzo e la porta da riga di comando
-
-	if (argc < 3) {
-		const char *addr_str = "127.0.0.1";
-		const int	port_no	 = 10000;
-	} else {
-		char *addr_str;
-		if (strcpy(*addr_str, argv[1]) < 0) {
-			fprintf(stderr, "Impossibile assegnare argomento: %s\n", strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-		int port_no;
-		port_no = argv[2];
+	const char *addr_str = "127.0.0.1";
+	int			port_no	 = 10000;
+	if (argc == 3) {
+		addr_str = argv[1];	 // oppure strdup
+		port_no	 = atoi(argv[2]);
 	}
+	// creazione del socket
+	int				   sd;
+	struct sockaddr_in sa;
+	if (socket_stream(&addr_str, int port_no, int *sd, struct sockaddr_in *sa) < 0) {
+		fprintf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
 	// loop
 	while (1) {
 		const unsigned int CMD_MAX = 1024;
@@ -344,41 +345,63 @@ int main(int argc, char *argv[]) {
 			fprintf(stderr, "Argomento di troppo: [%d] = '%s'\n", argc, tmp);
 			continue;
 		}
-
+		// gestione comandi
 		if (strcmp(cmd, "help")) {
 			help();
 		} else if (strcmp(cmd, "quit")) {
-			send_command(sd, "quit");
-			close(sd);
+			send_command(sd, "quit", NULL);
+			close(sd);	// quit del client
 			exit(EXIT_SUCCESS);
 		} else if (strcmp(cmd, "compress")) {
 			char algoritmo = 'z';
-
+			// bisogna leggere arg, se non e' NULL allora lo cambio
+			if (arg != NULL && (strlen(arg) == 1)) {
+				algoritmo = arg[0];
+			}
 			// se esiste un secondo argomento sostituiscilo ad
 			// "algoritmo", gli passo direttamente z o j il nome
 			// dell'archivio viene scelto automaticamente dal server
 			// archivio come enum??
 			if (algoritmo == 'z') {
 				// comprimi con algoritmo gzip
-				send_command(sd, "cz");
+				send_command(sd, "compress", "cz");
 			} else if (algoritmo == 'j') {
 				// comprimi con algoritmo bzip2
-				send_command(sd, "cj");
+				send_command(sd, "compress", "cj");
 			} else {
-				// errore
+				printf("Campo [alg] non valido\n");
+				continue;
 			}
 		} else if (strcmp(cmd, "add")) {
-			char *file;
-			// mette in file il secondo argomento
+			if (arg == NULL) {
+				printf("Campo [file] mancante\n");
+				continue;
+			}
+			char *filename = arg;
+			// mette in file il secondo argomento, ovvero il path
 			// verifica che il nome del file sia composto solamente
 			// da [a-z]|[A-Z]|[0-9]|(.)
-			// opzionale: accetta file con path relativo o assoluto,
-			// significa dover separare il nome del file dal suo path
-			// /path/to/file
-			// ^^^^^^^^ ^^^^
-			// path     filename
+			// NOTA: accetta file con path relativo o assoluto
+			char *foff	   = strrchr(filename, '/');
+			if (foff != NULL) {
+				filename = foff + 1;
+			}
+			int invalid_name = 0;
+			for (int i = 0; i < strlen(filename); i++) {
+				if (!isascii(filename[i]) && !isalpha(filename[i]) &&
+					!isnum(filename[i]) && filename[i] != '.') {
+					invalid_name = 1;
+					break;
+				}
+			}
 
-			if (send_file(sd, file) < 0) {
+			if (invalid_name) {
+				printf("Nome file '%s' non valido\n", filename);
+				continue;
+			}
+
+			send_command(sd, "add", filename);
+			if (send_file(sd, arg) < 0) {
 				fprintf(stderr, "Errore nel trasferimento del file %s\n", file_name);
 				return -1;
 			}
