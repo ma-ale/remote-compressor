@@ -342,7 +342,7 @@ int main(int argc, char *argv[]) {
 		char *cmd;
 		char *arg;
 		if (read_command(userinput, &cmd, &arg) < 0) {
-			fprintf(stderr, "Argomento di troppo: [%d] = '%s'\n", argc, tmp);
+			fprintf(stderr, "Troppi argomenti\n");
 			continue;
 		}
 		// gestione comandi
@@ -402,12 +402,12 @@ int main(int argc, char *argv[]) {
 
 			send_command(sd, "add", filename);
 			if (send_file(sd, arg) < 0) {
-				fprintf(stderr, "Errore nel trasferimento del file %s\n", file_name);
+				fprintf(stderr, "Errore nel trasferimento del file %s\n", filename);
 				return -1;
 			}
 
 			if (receive_response(sd) < 0) {
-				fprintf(stderr, "Errore ricevuto dal server %s\n", file_name);
+				fprintf(stderr, "Errore ricevuto dal server %s\n", filename);
 				return -1;
 			}
 		}
