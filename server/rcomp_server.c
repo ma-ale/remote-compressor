@@ -30,16 +30,18 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 	return 0;
 }
 
-// attraverso la funzione "system()" comprime la cartella dei file del client (path)
+// attraverso la funzione "system()" comprime la cartella dei file del client
 // con l'algoritmo specificato in un archivio chiamato "archivio_compresso.tar.gz"
 // oppure "archivio_compresso.tar.bz2"
-int compress_folder(int sd, const char *path, char alg) {
+int compress_folder(int sd, char alg) {
 	char command[1024];
+	char dirname[64];
+	snprintf(dirname, 64, "%d", getpid());
 
 	if (alg == 'z') {
-		snprintf(command, 1024, "tar -c -z -f archivio_compresso.tar.gz %s", path);
+		snprintf(command, 1024, "tar -c -z -f archivio_compresso.tar.gz %s", dirname);
 	} else if (alg == 'j') {
-		snprintf(command, 1024, "tar -c -j -f archivio_compresso.tar.bz2 %s", path);
+		snprintf(command, 1024, "tar -c -j -f archivio_compresso.tar.bz2 %s", dirname);
 	} else {
 		printf("Algoritmo non valido\n");
 		return -1;
@@ -213,7 +215,78 @@ int receive_command(int sd, char **cmd, char **arg) {
 	return 0;
 }
 
+// gestisce il socket di un client
+int client_process(int sd) {
+	const int ok = 1;
 
+	while (1) {
+		char *cmd, *arg;
+		if (receive_command(sd, &cmd, &arg) < 0) {
+			fprintf(stderr, "Impossibile ricevere il comando\n");
+			if (send_response(sd, !ok) < 0) {
+				fprintf(stderr, "Impossibile comunicare con il client\n");
+				break;
+			}
+			continue;
+		}
+
+		if (strcmp(cmd, "quit")) {
+			send_response(sd, ok);
+			// rimuovi la cartella
+			char command[sizeof("rm -rf ") + 64];
+			snprintf(command, sizeof("rm -rf ") + 64, "rm -rf %d", getpid());
+			system(command);
+			break;
+		} else if (strcmp(cmd, "add")) {
+			// controllo di avere il nome del file
+			char *filename = arg;
+			if (filename == NULL) {
+				fprintf(stderr, "Ricevuto il comando add senza file\n");
+				if (send_response(sd, !ok) < 0) {
+					fprintf(stderr, "Impossibile comunicare con il client\n");
+					break;
+				}
+				continue;
+			}
+
+			if (receive_file(sd, filename) < 0) {
+				fprintf(stderr, "Impossibile ricevere il file %s\n", filename);
+				if (send_response(sd, !ok) < 0) {
+					fprintf(stderr, "Impossibile comunicare con il client\n");
+					break;
+				}
+				continue;
+			}
+
+			send_response(sd, ok);
+			continue;
+		} else if (strcmp(cmd, "compress")) {
+			// controllo di avere il nome del file
+			char *alg = arg;
+			if (alg == NULL) {
+				fprintf(stderr, "Ricevuto il comando compress senza file\n");
+				if (send_response(sd, !ok) < 0) {
+					fprintf(stderr, "Impossibile comunicare con il client\n");
+					break;
+				}
+				continue;
+			}
+
+			if (compress_folder(sd, alg[0]) < 0) {
+				if (send_response(sd, !ok) < 0) {
+					fprintf(stderr, "Impossibile comunicare con il client\n");
+					break;
+				}
+				continue;
+			}
+
+			send_response(sd, ok);
+			continue;
+		}
+	}
+
+	return 0;
+}
 
 int main(int argc, char *argv[]) {
 	(void)argc;
@@ -221,10 +294,10 @@ int main(int argc, char *argv[]) {
 	char *addr_str = "127.0.0.1";
 	int	  port_no  = 10000;
 
-    // --- CREAZIONE SOCKET --- //
-    int *sd;
-    struct sockaddr_in *sa;
-    if(socket_stream(*addr_str, port_no, *sd, *sa) < 0){
+	// --- CREAZIONE SOCKET --- //
+	int				   *sd;
+	struct sockaddr_in *sa;
+	if (socket_stream(*addr_str, port_no, *sd, *sa) < 0) {
 		printf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -243,7 +316,8 @@ int main(int argc, char *argv[]) {
 	// --- LISTENING --- //
 	if (listen(sd, 10) < 0) {
 		fprintf(
-			stderr, "Impossibile mettersi in attesa su socket: %s\n", strerror(errno));
+			stderr, "Impossibile mettersi in attesa su socket: %s\n", strerror(errno)
+		);
 		exit(EXIT_FAILURE);
 	}
 
