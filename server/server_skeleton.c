@@ -37,5 +37,7 @@ int compress_folder(int sd, const char *path) { return 0; }
 // manda una risposta al client, se va tutto bene oppure no
 int send_response(int sd, );
 
+// riceve il file dal client
+int receive_file(int sd, const char* file_name);
 // il server spawna un processo figlioche gestisce un singolo client
 int main(int argc, char **argv) { return 0; }

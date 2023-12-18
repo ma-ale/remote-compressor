@@ -89,11 +89,14 @@ int connect_to_server(int sd, struct sockaddr_in *sa) { return 0; }	 // FATTO!
 // legge il comando inserito dall'utente, separando comando da eventuali argomenti
 // ritorna -1 se il comando non viene riconosciuto o ci sono troppi o pochi argomenti
 int read_command(const char *str, const char **com, const char **arg);	//-> ALE
+
 // manda un comando testuale al server come "quit" e "compress"
 // sd: descriptor del socket
 // str: stringa che contiene il comando
 // esempio: send_command(sd, "exit");
-int send_command(int sd, const char *com, const char *arg);
+// AGGIORNAMENTO 1: inserite le receive_response
+// AGGIORNAMENTO 2: se il secondo argomento e' NULL devo mandare lunghezza messaggio = 0
+int send_command(int sd, const char *com, const char *arg);	 // -> VIC
 
 // manda un file al server specificando il suo percorso
 // sd: descriptor del socket
@@ -121,7 +124,7 @@ int main(int argc, char **argv) {
 	// 		argv[1] = indirizzo
 	//		argv[2] = porta
 	// loop
-	while (1) {
+	/*while (1) {
 		const unsigned int CMD_MAX = 1024;
 		char			   comando[CMD_MAX];
 		// prendi il comando da stdin
@@ -179,3 +182,4 @@ int main(int argc, char **argv) {
 
 	return 0;
 }
+*/
