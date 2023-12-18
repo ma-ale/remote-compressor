@@ -105,3 +105,79 @@ int receive_file(int sd, const char *filename) {
 	chdir("..");
 	return 0;
 }
+
+// riceve due stringhe dal server, la prima sarà il comando e la seconda l'argomento
+// NOTA: in caso di errore i puntatori NON sono validi e non serve liberare memoria
+int receive_command(int sd, char **cmd, char **arg) {
+	char *command = NULL, *argument = NULL;
+
+	// --- RICEZIONE LUNGHEZZA COMANDO --- //
+	int msg_len = 0, cmd_dim = 0;
+	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
+		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
+		return -1;
+	}
+	cmd_dim = ntohl(msg_len);
+
+	// --- RICEZIONE COMANDO --- //
+	if ((command = malloc((size_t)cmd_dim + 1)) == NULL) {
+		fprintf(
+			stderr, "Impossibile allocare memoria per il comando: %s\n", strerror(errno)
+		);
+		return -1;
+	}
+	command[cmd_dim] = '\0';
+
+	// riceve il comando byte per byte
+	ssize_t recv_tot = 0, rcvd_bytes = 0;
+	while (recv_tot < (ssize_t)cmd_dim) {
+		if ((rcvd_bytes = recv(sd, &command[recv_tot], 1, 0)) < 0) {
+			fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
+			free(command);
+			return -1;
+		}
+		recv_tot += rcvd_bytes;
+	}
+	*cmd = command;
+
+	// --- RICEZIONE LUNGHEZZA ARGOMENTO --- //
+	int arg_dim = 0;
+	msg_len		= 0;
+	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
+		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
+		free(command);
+		return -1;
+	}
+	arg_dim = ntohl(msg_len);
+
+	// argomento di lunghezza zero significa che il comando non prevede argomento
+	if (arg_dim == 0) {
+		*arg = NULL;
+		return 0;
+	}
+
+	// --- RICEZIONE ARGOMENTO --- //
+	if ((argument = malloc((size_t)arg_dim + 1)) == NULL) {
+		fprintf(
+			stderr, "Impossibile allocare memoria per l'argomento: %s\n", strerror(errno)
+		);
+		free(command);
+		return -1;
+	}
+	argument[arg_dim] = '\0';
+
+	// riceve l'argomento byte per byte
+	recv_tot = 0, rcvd_bytes = 0;
+	while (recv_tot < (ssize_t)arg_dim) {
+		if ((rcvd_bytes = recv(sd, &argument[recv_tot], 1, 0)) < 0) {
+			fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
+			free(command);
+			free(argument);
+			return -1;
+		}
+		recv_tot += rcvd_bytes;
+	}
+	*arg = argument;
+
+	return 0;
+}
