@@ -72,8 +72,10 @@ int send_command(int sd, const char *com, const char *arg) {
 	}
 	printf("Inviati %ld bytes di comando\n", sent_tot);
 
+	// se il secondo argomento è nullo allora manda solo la sua dimensione, ovvero 0
 	if (arg == NULL) {
-		printf("Il comando non prevede argomento: inviati 0 byte di argomento");
+		int msg_len = 0;
+		send(sd, &msg_len, sizeof(int), 0);
 		return 0;
 	}
 	// --- INVIO LUNGHEZZA ARGOMENTO--- //
