@@ -5,6 +5,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <stdint.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -33,23 +34,22 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 // con l'algoritmo specificato in un archivio chiamato "archivio_compresso.tar.gz"
 // oppure "archivio_compresso.tar.bz2"
 int compress_folder(int sd, const char *path, char alg) {
-    char command [1024];
+	char command[1024];
 
-    if (alg == 'z'){
-        snprintf(command, 1024, "tar -c -z -f archivio_compresso.tar.gz %s", path);
-    } else if (alg == 'j'){
-        snprintf(command, 1024, "tar -c -j -f archivio_compresso.tar.bz2 %s", path);
-    } else {
-        printf("Algoritmo non valido\n");
+	if (alg == 'z') {
+		snprintf(command, 1024, "tar -c -z -f archivio_compresso.tar.gz %s", path);
+	} else if (alg == 'j') {
+		snprintf(command, 1024, "tar -c -j -f archivio_compresso.tar.bz2 %s", path);
+	} else {
+		printf("Algoritmo non valido\n");
 		return -1;
-    }
-    if(system(command) != 0){
-        fprintf(stderr, "Impossibile fare la system() %s\n", strerror(errno));
+	}
+	if (system(command) != 0) {
+		fprintf(stderr, "Impossibile fare la system() %s\n", strerror(errno));
 		return -1;
-    }
-    return 0;
+	}
+	return 0;
 }
-
 
 // manda una risposta al client, se va tutto bene oppure no
 int send_response(int sd, int ok) {
@@ -86,12 +86,21 @@ int receive_file(int sd, const char *filename) {
 	FILE *file = fopen(filename, "w+");
 
 	// --- RICEZIONE LUNGHEZZA FILE --- //
-	int msg_len = 0, file_dim = 0;
+	uint32_t msg_len = 0, file_dim = 0;
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
 		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
 		return -1;
 	}
 	file_dim = ntohl(msg_len);
+	// se ho ricevuto un file di lunghezza 0xffffffff significa che il client
+	// ha avuto un problema nell'invio
+	if (file_dim == UINT32_MAX) {
+		fprintf(stderr, "Il client ha avuto problemi nell'invio del file\n");
+		fclose(file);
+		remove(filename);
+		chdir("..");
+		return 0;
+	}
 	printf("Ricevuti %d byte di lunghezza del file\n", file_dim);
 
 	// --- RICEZIONE FILE --- //
