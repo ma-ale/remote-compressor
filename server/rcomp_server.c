@@ -25,3 +25,24 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 
 	return 0;
 }
+
+// attraverso la funzione "system()" comprime la cartella dei file del client (path)
+// con l'algoritmo specificato in un archivio chiamato "archivio_compresso.tar.gz"
+// oppure "archivio_compresso.tar.bz2"
+int compress_folder(int sd, const char *path, char alg) {
+    char command [1024];
+
+    if (alg == 'z'){
+        snprintf(command, 1024, "tar -c -z -f archivio_compresso.tar.gz %s", path);
+    } else if (alg == 'j'){
+        snprintf(command, 1024, "tar -c -j -f archivio_compresso.tar.bz2 %s", path);
+    } else {
+        printf("Algoritmo non valido\n");
+		return -1;
+    }
+    if(system(command) != 0){
+        fprintf(stderr, "Impossibile fare la system() %s\n", strerror(errno));
+		return -1;
+    }
+    return 0;
+}
