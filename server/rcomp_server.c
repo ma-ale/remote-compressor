@@ -203,3 +203,95 @@ int receive_command(int sd, char **cmd, char **arg) {
 
 	return 0;
 }
+
+
+
+int main(int argc, char *argv[]) {
+	(void)argc;
+	(void)argv;
+	char *addr_str = "127.0.0.1";
+	int	  port_no  = 10000;
+
+    // --- CREAZIONE SOCKET --- //
+    int *sd;
+    struct sockaddr_in *sa;
+    if(socket_stream(*addr_str, port_no, *sd, *sa) < 0){
+		printf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	// --- BINDING --- //
+
+	// associazione indirizzo a socket
+	if (bind(sd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
+		fprintf(
+			stderr, "Impossibile associare l'indirizzo a un socket: %s\n", strerror(errno)
+		);
+		exit(EXIT_FAILURE);
+	}
+
+	printf("Socket %d associato a %s:%d\n", sd, addr_str, port_no);
+
+	// --- LISTENING --- //
+	if (listen(sd, 10) < 0) {
+		fprintf(
+			stderr, "Impossibile mettersi in attesa su socket: %s\n", strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	// --- ATTESA DI CONNESSIONE --- //
+	printf("--- In attesa di connessione ---\n");
+
+	int				   conn_sd;
+	struct sockaddr_in client_addr;
+	char			   client_addr_str[INET_ADDRSTRLEN];
+
+	while (1) {
+		socklen_t client_addr_len = sizeof(client_addr);
+		conn_sd = accept(sd, (struct sockaddr *)&client_addr, &client_addr_len);
+		if (conn_sd < 0) {
+			fprintf(
+				stderr,
+				"Impossibile accettare connessione su socket: %s\n",
+				strerror(errno)
+			);
+			continue;
+		}
+
+		// conversione dell'indirizzo in formato numerico
+		const char *res = inet_ntop(
+			AF_INET, &client_addr.sin_addr.s_addr, client_addr_str, INET_ADDRSTRLEN
+		);
+		if (res == NULL) {
+			fprintf(stderr, "Impossibile convertire l'indirizzo: %s\n", strerror(errno));
+		} else {
+			printf("Connesso col client %s:%d\n", addr_str, ntohs(client_addr.sin_port));
+		}
+
+		pid_t pid;
+		if ((pid = fork()) < 0) {
+			fprintf(
+				stderr, "Impossibile creare un processo figlio: %s\n", strerror(errno)
+			);
+			close(conn_sd);
+			close(sd);
+			exit(EXIT_FAILURE);
+		} else if (pid == 0) {
+			// processo figlio
+			process_client(conn_sd);
+			exit(EXIT_SUCCESS);
+		} else {
+			// processo genitore
+			if (wait(NULL) < 0) {
+				fprintf(
+					stderr, "Impossibile creare un processo figlio: %s\n", strerror(errno)
+				);
+			}
+			printf("Il processo %d ha terminato", pid);
+		}
+	}
+
+	// --- CHIUSURA SOCKET --- //
+	close(sd);
+
+	return EXIT_SUCCESS;
+}
