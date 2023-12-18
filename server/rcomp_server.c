@@ -10,6 +10,78 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+
+ssize_t file_dimension(const char *path) {
+	// recupero dei metadati del file
+	struct stat file_stat;
+	if (stat(path, &file_stat) < 0) {
+		fprintf(stderr, "Errore nella lettura delle informazioni del file %s\n", path);
+		return -1;
+	}
+
+	// se il file e' un file regolare, visualizza la sua dimensione
+	ssize_t file_size;
+	if (S_ISREG(file_stat.st_mode) > 0) {
+		file_size = file_stat.st_size;
+	} else {
+		printf("Il file non e' un file regolare\n");
+		return -1;
+	}
+	return file_size;
+}
+
+int send_file(int sd, const char *path) {
+	ssize_t file_dim = file_dimension(path);
+	if (file_dim < 0) {
+		// l'errore specifico viene stampato da file_dimension()
+		// il server si aspetta un file quindi gli devo mandare qualcosa
+		// TODO: cosa gli dico al server?
+		return -1;
+	}
+
+	// se il file è troppo grande non gli posso mandare la dimensione
+	if (file_dim > UINT_MAX) {
+		// TODO: cosa gli dico al server?
+		fprintf(
+			stderr,
+			"Il file è troppo grande: %.2fGiB\n",
+			(float)file_dim / (float)(1024 * 1024 * 1024)
+		);
+		return -1;
+	}
+
+	uint32_t msg_len = htonl(file_dim);
+
+	size_t sent_bytes = send(sd, &msg_len, sizeof(uint32_t), 0);
+	if (sent_bytes < 0) {
+		fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
+		return -1;
+	}
+
+	FILE *file = fopen(path, "r");
+
+	// manda il file byte per byte
+	size_t sent_tot = 0;
+	while (1) {
+		char buff[1];
+		int	 c = fgetc(file);
+		if (c == EOF) {
+			break;
+		}
+		buff[0]	   = c;
+		sent_bytes = send(sd, buff, 1, 0);
+		if (sent_bytes < 0) {
+			fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
+			return -1;
+		}
+		sent_tot += sent_bytes;
+		if (sent_tot >= (size_t)file_dim) {
+			break;
+		}
+	}
+	return 0;
+}
+
 int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa) {
 	*sd = socket(AF_INET, SOCK_STREAM, 0);
 	if (*sd < 0) {
