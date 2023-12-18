@@ -31,6 +31,7 @@ int read_command(char *str, const char **com, const char **arg) {
 	// ritorno il numero di argomenti trovati
 	return argc;
 }
+
 // manda un comando testuale al server come "quit" e "compress"
 // sd: descriptor del socket
 // str: stringa che contiene il comando
@@ -48,28 +49,28 @@ int send_command(int sd, const char *com, const char *arg) {
 	printf("Inviati %ld bytes di lunghezza comando\n", sent_bytes);
 	// --- INVIO COMANDO --- //
 	// manda il comando byte per byte
-	size_t bytes_sent = 0;
+	size_t sent_tot = 0;
 	char   buff[1];
 	while (1) {
-		buff[0]	   = com[bytes_sent];
+		buff[0]	   = com[sent_tot];
 		sent_bytes = send(sd, buff, 1, 0);
 		if (sent_bytes < 0) {
 			fprintf(stderr, "Impossibile inviare dati comando: %s\n", strerror(errno));
 			return (-1);
 		}
-		bytes_sent += sent_bytes;
-		if (bytes_sent == (size_t)com_len) {
+		sent_tot += sent_bytes;
+		if (sent_tot == (size_t)com_len) {
 			break;
-		} else if (bytes_sent > (size_t)com_len) {
+		} else if (sent_tot > (size_t)com_len) {
 			printf(
 				"Invio comando fallito: inviati %ld byte in piu' della dimensione del "
 				"comando\n",
-				(bytes_sent - com_len)
+				(sent_tot - com_len)
 			);
 			return (-1);
 		}
 	}
-	printf("Inviati %ld bytes di comando\n", bytes_sent);
+	printf("Inviati %ld bytes di comando\n", sent_tot);
 
 	if (arg == NULL) {
 		printf("Il comando non prevede argomento: inviati 0 byte di argomento");
@@ -112,6 +113,7 @@ int send_command(int sd, const char *com, const char *arg) {
 
 	return 0;
 }
+
 // aspetta un messaggio di risposta dal server, ritorna 0 se "OK"
 // oppure negativo se ci sono stati errori o "NON OK"
 // di solito usata dopo ogni messaggio, non quello della lunghezza del messaggio
@@ -132,6 +134,7 @@ int receive_response(int sd) {
 
 	return 0;
 }
+
 // path specifica il nome ed il percorso del file
 ssize_t file_dimension(const char *path) {
 	// recupero dei metadati del file
@@ -183,7 +186,7 @@ int send_file(int sd, const char *path) {
 	FILE *file = fopen(path, "r");
 
 	// manda il file byte per byte
-	size_t bytes_sent = 0;
+	size_t sent_tot = 0;
 	while (1) {
 		char buff[1];
 		int	 c = fgetc(file);
@@ -196,8 +199,8 @@ int send_file(int sd, const char *path) {
 			fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
 			return -1;
 		}
-		bytes_sent += sent_bytes;
-		if (bytes_sent >= (size_t)file_dim) {
+		sent_tot += sent_bytes;
+		if (sent_tot >= (size_t)file_dim) {
 			break;
 		}
 	}
@@ -256,7 +259,7 @@ int receive_file(int sd, char ext) {
 		remove(path);
 		return -1;
 	} else {
-		printf("File %s ricevuto. Ricevuti %ld byte\n",patht, recv_to);
+		printf("File %s ricevuto. Ricevuti %ld byte\n", path, recv_tot);
 	}
 
 	return 0;
@@ -319,7 +322,7 @@ int main(int argc, char *argv[]) {
 	// creazione del socket
 	int				   sd;
 	struct sockaddr_in sa;
-	if (socket_stream(&addr_str, int port_no, int *sd, struct sockaddr_in *sa) < 0) {
+	if (socket_stream(&addr_str, port_no, &sd, &sa) < 0) {
 		fprintf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
