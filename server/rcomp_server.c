@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
+const int ok = 1;
 
 ssize_t file_dimension(const char *path) {
 	// recupero dei metadati del file
@@ -152,6 +153,7 @@ int receive_file(int sd, const char *filename) {
 		fprintf(
 			stderr, "Impossibile creare la cartella di processo: %s\n", strerror(errno)
 		);
+		send_response(sd, !ok);
 		return -1;
 	}
 	// entra nella cartella
@@ -163,6 +165,8 @@ int receive_file(int sd, const char *filename) {
 	uint32_t msg_len = 0, file_dim = 0;
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
 		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
+		chdir("..");
+		send_response(sd, !ok);
 		return -1;
 	}
 	file_dim = ntohl(msg_len);
@@ -187,6 +191,7 @@ int receive_file(int sd, const char *filename) {
 			fclose(file);
 			remove(filename);
 			chdir("..");
+			send_response(sd, !ok);
 			return -1;
 		}
 		fputc(buff[0], file);
@@ -202,12 +207,14 @@ int receive_file(int sd, const char *filename) {
 		);
 		remove(filename);
 		chdir("..");
+		send_response(sd, !ok);
 		return -1;
 	} else {
 		printf("Ricevuti %ld byte di file\n", recv_tot);
 	}
 
 	chdir("..");
+	send_response(sd, ok);
 	return 0;
 }
 
@@ -289,16 +296,10 @@ int receive_command(int sd, char **cmd, char **arg) {
 
 // gestisce il socket di un client
 int client_process(int sd) {
-	const int ok = 1;
-
 	while (1) {
 		char *cmd, *arg;
 		if (receive_command(sd, &cmd, &arg) < 0) {
 			fprintf(stderr, "Impossibile ricevere il comando\n");
-			if (send_response(sd, !ok) < 0) {
-				fprintf(stderr, "Impossibile comunicare con il client\n");
-				break;
-			}
 			continue;
 		}
 
@@ -314,45 +315,27 @@ int client_process(int sd) {
 			char *filename = arg;
 			if (filename == NULL) {
 				fprintf(stderr, "Ricevuto il comando add senza file\n");
-				if (send_response(sd, !ok) < 0) {
-					fprintf(stderr, "Impossibile comunicare con il client\n");
-					break;
-				}
 				continue;
 			}
 
 			if (receive_file(sd, filename) < 0) {
 				fprintf(stderr, "Impossibile ricevere il file %s\n", filename);
-				if (send_response(sd, !ok) < 0) {
-					fprintf(stderr, "Impossibile comunicare con il client\n");
-					break;
-				}
 				continue;
 			}
 
-			send_response(sd, ok);
 			continue;
 		} else if (strcmp(cmd, "compress")) {
 			// controllo di avere il nome del file
 			char *alg = arg;
 			if (alg == NULL) {
 				fprintf(stderr, "Ricevuto il comando compress senza file\n");
-				if (send_response(sd, !ok) < 0) {
-					fprintf(stderr, "Impossibile comunicare con il client\n");
-					break;
-				}
 				continue;
 			}
 
 			if (compress_folder(sd, alg[0]) < 0) {
-				if (send_response(sd, !ok) < 0) {
-					fprintf(stderr, "Impossibile comunicare con il client\n");
-					break;
-				}
 				continue;
 			}
 
-			send_response(sd, ok);
 			continue;
 		}
 	}
