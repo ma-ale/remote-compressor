@@ -25,3 +25,19 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 
 	return 0;
 }
+
+// manda una risposta al client, se va tutto bene oppure no
+int send_response(int sd, int ok) {
+	if (ok) {
+		if (send(sd, "OK", 2, 0) < 0) {
+			fprintf(stderr, "Impossibile inviare risposta al client\n");
+			return -1;
+		}
+	} else {
+		if (send(sd, "NO", 2, 0) < 0) {
+			fprintf(stderr, "Impossibile inviare risposta al client\n");
+			return -1;
+		}
+	}
+	return 0;
+}
