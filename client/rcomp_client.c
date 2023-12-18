@@ -70,6 +70,13 @@ int send_command(int sd, const char *com, const char *arg) {
 			return (-1);
 		}
 	}
+
+	// ascolta la risposta del server
+	printf("Verifica risposta dal server.../n");
+	if (receive_response(sd) < 0) {
+		return -1;
+	}
+
 	printf("Inviati %ld bytes di comando\n", sent_tot);
 
 	// se il secondo argomento è nullo allora manda solo la sua dimensione, ovvero 0
@@ -111,6 +118,12 @@ int send_command(int sd, const char *com, const char *arg) {
 			return (-1);
 		}
 	}
+	// ascolta la risposta del server
+	printf("Verifica risposta dal server.../n");
+	if (receive_response(sd) < 0) {
+		return -1;
+	}
+
 	printf("Inviati %ld bytes di argomento\n", sent_tot);
 
 	return 0;
