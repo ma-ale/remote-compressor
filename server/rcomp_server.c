@@ -305,6 +305,9 @@ int client_process(int sd) {
 		if (strcmp(cmd, "quit")) {
 			send_response(sd, ok);
 			// rimuovi la cartella
+			// visto che pid e' al massimo un numero di 5 caratteri, creo un
+			// buffer di un ordine di grandezza maggiore: 64
+			// 64 eè piu' bello di 32 e 16 :)
 			char command[sizeof("rm -rf ") + 64];
 			snprintf(command, sizeof("rm -rf ") + 64, "rm -rf %d", getpid());
 			system(command);
