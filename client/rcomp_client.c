@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
 	// metto di default porta e indirizzo se argc < 3
 	(void)argc;
 	(void)argv;
-	// TODO: prendi l'indirizzo e la porta da riga di comando
+	// prendi l'indirizzo e la porta da riga di comando
 	const char *addr_str = "127.0.0.1";
 	int			port_no	 = 1234;
 	if (argc == 3) {
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 	}
 	// creazione del socket
 	struct sockaddr_in sa;
-	if (socket_stream(&addr_str, port_no, &sa) < 0) {
+	if (socket_stream(&addr_str, port_no, &sd, &sa) < 0) {
 		fprintf(stderr, "Impossibile creare il socket\n");
 		exit(EXIT_FAILURE);
 	}
@@ -136,11 +136,12 @@ int main(int argc, char *argv[]) {
 				fprintf(stderr, "Campo [alg] non valido\n");
 				continue;
 			}
-			const char *path;
+			char *path;
 			// mette l'estensione al nome del file a seconda dell'algoritmo
 			get_filename(algoritmo, &path);
 			// ora ho dove voglio creare il file da ricevere, quello compresso
 			receive_file(path);
+			free(path);
 		} else if (strcmp(cmd, "add")) {
 			if (arg == NULL) {
 				fprintf(stderr, "Campo [file] mancante\n");
