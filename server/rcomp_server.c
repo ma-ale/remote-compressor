@@ -11,7 +11,17 @@
 #include <arpa/inet.h>
 
 const int ok = 1;
-int sd = 1;
+int sd = -1;
+
+void quit() {
+		;
+		if (close(sd) < 0) {
+            fprintf(stderr, "Impossibile chiudere il socket: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+		printf("Chiusura del socket avvenuta con successo\n");
+		exit(EXIT_SUCCESS);
+}
 
 ssize_t file_dimension(const char *path) {
 	// recupero dei metadati del file
