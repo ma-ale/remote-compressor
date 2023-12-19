@@ -17,6 +17,10 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 // invia un file al peer specificato dalla variabile esterna sd
 int send_file(const char *path);
 
+// riceve un file dal peer e lo salva nel percorso specificato da path
+// NOTA: path è il percorso al file, non ad una cartella
+int receive_file(const char *path);
+
 // aspetta un messaggio di risposta dal peer, ritorna 0 se "OK"
 // oppure negativo se ci sono stati errori o "NON OK"
 // di solito usata dopo ogni messaggio, non quello della lunghezza del messaggio
