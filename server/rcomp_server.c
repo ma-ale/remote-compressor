@@ -28,17 +28,10 @@ void quit() {
 // attraverso la funzione "system()" comprime la cartella dei file del client
 // con l'algoritmo specificato in un archivio chiamato "archivio_compresso.tar.gz"
 // oppure "archivio_compresso.tar.bz2"
-int compress_folder(const char *dirname, char alg) {
-	char cmd[128];
+int compress_folder(const char *dirname, const char *archivename, char alg) {
+	char cmd[256];
+	snprintf(cmd, sizeof(cmd), "tar -c -%c -f %s %s", alg, archivename, dirname);
 
-	if (alg == 'z') {
-		snprintf(cmd, sizeof(cmd), "tar -c -z -f archivio_compresso.tar.gz %s", dirname);
-	} else if (alg == 'j') {
-		snprintf(cmd, sizeof(cmd), "tar -c -j -f archivio_compresso.tar.bz2 %s", dirname);
-	} else {
-		printf("Algoritmo non valido\n");
-		return -1;
-	}
 	if (system(cmd) != 0) {
 		fprintf(stderr, "Impossibile fare la system() %s\n", strerror(errno));
 		return -1;
@@ -99,12 +92,36 @@ int client_process(void) {
 			// controllo di avere il nome del file
 			char *alg = arg;
 			if (alg == NULL) {
-				fprintf(stderr, "Ricevuto il comando compress senza file\n");
+				fprintf(stderr, "Ricevuto il comando compress senza algoritmo\n");
 				goto free_args;
 			}
 
-			if (compress_folder(myfolder, alg[0]) < 0) {
+			char  algc = 'z';
+			char *archivename;
+			int	  e = 0;
+
+			if (strcmp(alg, "cz")) {
+				algc = 'z';
+			} else if (strcmp(alg, "cj")) {
+				algc = 'j';
+			} else {
+				fprintf(stderr, "Algoritmo non conosciuto\n");
 				goto free_args;
+			}
+
+			get_filename(algc, &archivename);
+			e = compress_folder(myfolder, archivename, algc);
+
+			if (e < 0) {
+				fprintf(stderr, "Impossibile comprimere %s\n", myfolder);
+				goto free_args;
+			}
+
+			e = send_file(archivename);
+			free(archivename);
+
+			if (e < 0) {
+				fprintf(stderr, "Impossibile inviare l'archivio\n");
 			}
 		}
 

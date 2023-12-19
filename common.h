@@ -9,9 +9,12 @@
 //     1. I motivi per cui stat() può fallire
 ssize_t file_dimension(const char *path);
 
+// genera il nome dell'archivio compresso da ricevere/trasmettere con l'estensione giusta
+int get_filename(char ext, char **file_name);
+
 // crea un socket di tipo AF_INET e SOCK_STREAM, assegna il descriptor alla variabile
-// esterna sd e ritorna la struttura sa riempita con l'indirizzo specificato da addr_str
-// e port_no
+// esterna sd e ritorna la struttura sa riempita con l'indirizzo specificato da
+// addr_str e port_no
 int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa);
 
 // invia un file al peer specificato dalla variabile esterna sd
@@ -34,9 +37,9 @@ int send_response(int ok);
 // esempio: send_command(sd, "exit");
 int send_command(const char *com, const char *arg);
 
-// riceve due stringhe, la prima sarà il comando e la seconda l'argomento, le immagazzina
-// in *cmd e *arg
-// NOTA: in caso di errore i puntatori NON sono validi e non serve liberare memoria
+// riceve due stringhe, la prima sarà il comando e la seconda l'argomento, le
+// immagazzina in *cmd e *arg NOTA: in caso di errore i puntatori NON sono validi e
+// non serve liberare memoria
 int receive_command(char **cmd, char **arg);
 
 #endif

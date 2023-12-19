@@ -33,6 +33,20 @@ ssize_t file_dimension(const char *path) {
 	return file_size;
 }
 
+int get_filename(char ext, char **file_name) {
+	char base_name[64] = "archivio_compresso.tar";
+	if (ext == 'z') {
+		strcat(base_name, ".gz");
+	} else if (ext == 'j') {
+		strcat(base_name, ".bz2");
+	} else {
+		fprintf(stderr, "Estensione file non riconosciuta: %c\n", ext);
+		return -1;
+	}
+	*file_name = strdup(base_name);	 // linuk non fallisce mai di memoria ;)
+	return 0;
+}
+
 int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa) {
 	*sd = socket(AF_INET, SOCK_STREAM, 0);
 	if (*sd < 0) {
