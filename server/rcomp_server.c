@@ -28,20 +28,18 @@ void quit() {
 // attraverso la funzione "system()" comprime la cartella dei file del client
 // con l'algoritmo specificato in un archivio chiamato "archivio_compresso.tar.gz"
 // oppure "archivio_compresso.tar.bz2"
-int compress_folder(char alg) {
-	char command[1024];
-	char dirname[64];
-	snprintf(dirname, 64, "%d", getpid());
+int compress_folder(const char *dirname, char alg) {
+	char cmd[128];
 
 	if (alg == 'z') {
-		snprintf(command, 1024, "tar -c -z -f archivio_compresso.tar.gz %s", dirname);
+		snprintf(cmd, sizeof(cmd), "tar -c -z -f archivio_compresso.tar.gz %s", dirname);
 	} else if (alg == 'j') {
-		snprintf(command, 1024, "tar -c -j -f archivio_compresso.tar.bz2 %s", dirname);
+		snprintf(cmd, sizeof(cmd), "tar -c -j -f archivio_compresso.tar.bz2 %s", dirname);
 	} else {
 		printf("Algoritmo non valido\n");
 		return -1;
 	}
-	if (system(command) != 0) {
+	if (system(cmd) != 0) {
 		fprintf(stderr, "Impossibile fare la system() %s\n", strerror(errno));
 		return -1;
 	}
@@ -50,8 +48,13 @@ int compress_folder(char alg) {
 
 // gestisce il socket di un client
 int client_process(void) {
+	char *cmd = NULL, *arg = NULL;
+
+	// nome della mia personalissima cartella
+	char myfolder[64];
+	snprintf(myfolder, sizeof(myfolder), "folder-%d", getpid());
+
 	while (1) {
-		char *cmd, *arg;
 		if (receive_command(&cmd, &arg) < 0) {
 			fprintf(stderr, "Impossibile ricevere il comando\n");
 			continue;
@@ -60,11 +63,8 @@ int client_process(void) {
 		if (strcmp(cmd, "quit")) {
 			send_response(ok);
 			// rimuovi la cartella
-			// visto che pid e' al massimo un numero di 5 caratteri, creo un
-			// buffer di un ordine di grandezza maggiore: 64
-			// 64 eè piu' bello di 32 e 16 :)
-			char command[sizeof("rm -rf ") + 64];
-			snprintf(command, sizeof("rm -rf ") + 64, "rm -rf %d", getpid());
+			char command[sizeof("rm -rf ") + sizeof(myfolder)];
+			snprintf(command, sizeof(command), "rm -rf %s", myfolder);
 			system(command);
 			break;
 		} else if (strcmp(cmd, "add")) {
@@ -72,28 +72,50 @@ int client_process(void) {
 			char *filename = arg;
 			if (filename == NULL) {
 				fprintf(stderr, "Ricevuto il comando add senza file\n");
-				continue;
+				goto free_args;
 			}
 
-			if (receive_file(filename) < 0) {
+			// crea una cartella temporanea del processo
+			int e = mkdir(myfolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+			if (e < 0 && errno != EEXIST) {
+				fprintf(
+					stderr,
+					"Impossibile creare la cartella di processo: %s\n",
+					strerror(errno)
+				);
+				return -1;
+			}
+			// entra nella cartella
+			chdir(myfolder);
+			e = receive_file(filename);
+			chdir("..");
+
+			if (e < 0) {
 				fprintf(stderr, "Impossibile ricevere il file %s\n", filename);
-				continue;
+				goto free_args;
 			}
 
-			continue;
 		} else if (strcmp(cmd, "compress")) {
 			// controllo di avere il nome del file
 			char *alg = arg;
 			if (alg == NULL) {
 				fprintf(stderr, "Ricevuto il comando compress senza file\n");
-				continue;
+				goto free_args;
 			}
 
-			if (compress_folder(alg[0]) < 0) {
-				continue;
+			if (compress_folder(myfolder, alg[0]) < 0) {
+				goto free_args;
 			}
+		}
 
-			continue;
+	// brutte cose a me
+	free_args:
+		// evitiamo di introdurre memory leak :p
+		if (arg) {
+			free(arg);
+		}
+		if (cmd) {
+			free(cmd);
 		}
 	}
 
