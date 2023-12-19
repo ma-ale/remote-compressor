@@ -97,21 +97,16 @@ int process_client(void) {
 				goto free_args;
 			}
 
-			char  algc = 'z';
 			char *archivename;
 			int	  e = 0;
 
-			if (strcmp(alg, "cz")) {
-				algc = 'z';
-			} else if (strcmp(alg, "cj")) {
-				algc = 'j';
-			} else {
+			if (alg[0] != 'z' && alg[0] != 'j') {
 				fprintf(stderr, "Algoritmo non conosciuto\n");
 				goto free_args;
 			}
 
-			get_filename(algc, &archivename);
-			e = compress_folder(myfolder, archivename, algc);
+			get_filename(alg[0], &archivename);
+			e = compress_folder(myfolder, archivename, alg[0]);
 
 			if (e < 0) {
 				fprintf(stderr, "Impossibile comprimere %s\n", myfolder);
