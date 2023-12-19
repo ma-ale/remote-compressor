@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		} else if (pid == 0) {
 			// processo figlio
-			process_client(sd);
+			process_client();
 			exit(EXIT_SUCCESS);
 		} else {
 			// processo genitore

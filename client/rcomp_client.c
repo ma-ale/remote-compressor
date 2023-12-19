@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
 	}
 	// creazione del socket
 	struct sockaddr_in sa;
-	if (socket_stream(&addr_str, port_no, &sd, &sa) < 0) {
+	if (socket_stream(addr_str, port_no, &sd, &sa) < 0) {
 		fprintf(stderr, "Impossibile creare il socket\n");
 		exit(EXIT_FAILURE);
 	}
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 			int invalid_name = 0;
 			for (int i = 0; i < strlen(filename); i++) {
 				if (!isascii(filename[i]) && !isalpha(filename[i]) &&
-					!isnum(filename[i]) && filename[i] != '.') {
+					!isdigit(filename[i]) && filename[i] != '.') {
 					invalid_name = 1;
 					break;
 				}
