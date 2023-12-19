@@ -95,8 +95,8 @@ int send_file(const char *path) {
 }
 
 int socket_stream(const char *addr_str, int port_no, struct sockaddr_in *sa) {
-	*sd = socket(AF_INET, SOCK_STREAM, 0);
-	if (*sd < 0) {
+	sd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sd < 0) {
 		fprintf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		return -1;
 	}
@@ -364,7 +364,6 @@ int main(int argc, char *argv[]) {
 	int	  port_no  = 10000;
 
 	// --- CREAZIONE SOCKET --- //
-	int				   *sd;
 	struct sockaddr_in *sa;
 	if (socket_stream(*addr_str, port_no, *sa) < 0) {
 		printf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
