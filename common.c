@@ -33,9 +33,9 @@ ssize_t file_dimension(const char *path) {
 	return file_size;
 }
 
-int socket_stream(const char *addr_str, int port_no, struct sockaddr_in *sa) {
-	sd = socket(AF_INET, SOCK_STREAM, 0);
-	if (sd < 0) {
+int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa) {
+	*sd = socket(AF_INET, SOCK_STREAM, 0);
+	if (*sd < 0) {
 		fprintf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		return -1;
 	}

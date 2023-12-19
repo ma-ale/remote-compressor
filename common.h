@@ -12,7 +12,7 @@ ssize_t file_dimension(const char *path);
 // crea un socket di tipo AF_INET e SOCK_STREAM, assegna il descriptor alla variabile
 // esterna sd e ritorna la struttura sa riempita con l'indirizzo specificato da addr_str
 // e port_no
-int socket_stream(const char *addr_str, int port_no, struct sockaddr_in *sa);
+int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa);
 
 // invia un file al peer specificato dalla variabile esterna sd
 int send_file(const char *path);
