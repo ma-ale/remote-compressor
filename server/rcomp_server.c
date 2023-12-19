@@ -11,6 +11,7 @@
 #include <arpa/inet.h>
 
 const int ok = 1;
+int sd = 1;
 
 ssize_t file_dimension(const char *path) {
 	// recupero dei metadati del file
@@ -31,7 +32,7 @@ ssize_t file_dimension(const char *path) {
 	return file_size;
 }
 
-int send_file(int sd, const char *path) {
+int send_file(const char *path) {
 	ssize_t file_dim = file_dimension(path);
 	if (file_dim < 0) {
 		// l'errore specifico viene stampato da file_dimension()
@@ -83,7 +84,7 @@ int send_file(int sd, const char *path) {
 	return 0;
 }
 
-int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa) {
+int socket_stream(const char *addr_str, int port_no, struct sockaddr_in *sa) {
 	*sd = socket(AF_INET, SOCK_STREAM, 0);
 	if (*sd < 0) {
 		fprintf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
@@ -106,7 +107,7 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 // attraverso la funzione "system()" comprime la cartella dei file del client
 // con l'algoritmo specificato in un archivio chiamato "archivio_compresso.tar.gz"
 // oppure "archivio_compresso.tar.bz2"
-int compress_folder(int sd, char alg) {
+int compress_folder(char alg) {
 	char command[1024];
 	char dirname[64];
 	snprintf(dirname, 64, "%d", getpid());
@@ -127,7 +128,7 @@ int compress_folder(int sd, char alg) {
 }
 
 // manda una risposta al client, se va tutto bene oppure no
-int send_response(int sd, int ok) {
+int send_response(int ok) {
 	if (ok) {
 		if (send(sd, "OK", 2, 0) < 0) {
 			fprintf(stderr, "Impossibile inviare risposta al client\n");
@@ -143,7 +144,7 @@ int send_response(int sd, int ok) {
 }
 
 // ricevi un file dal client e mettilo nella cartella personale con il nome specificato
-int receive_file(int sd, const char *filename) {
+int receive_file(const char *filename) {
 	// controlla che la cartella personale esista, se non esiste creala
 	char dirname[64];
 	snprintf(dirname, 64, "%d", getpid());
@@ -153,7 +154,7 @@ int receive_file(int sd, const char *filename) {
 		fprintf(
 			stderr, "Impossibile creare la cartella di processo: %s\n", strerror(errno)
 		);
-		send_response(sd, !ok);
+		send_response(!ok);
 		return -1;
 	}
 	// entra nella cartella
@@ -166,7 +167,7 @@ int receive_file(int sd, const char *filename) {
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
 		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
 		chdir("..");
-		send_response(sd, !ok);
+		send_response(!ok);
 		return -1;
 	}
 	file_dim = ntohl(msg_len);
@@ -191,7 +192,7 @@ int receive_file(int sd, const char *filename) {
 			fclose(file);
 			remove(filename);
 			chdir("..");
-			send_response(sd, !ok);
+			send_response(!ok);
 			return -1;
 		}
 		fputc(buff[0], file);
@@ -207,20 +208,20 @@ int receive_file(int sd, const char *filename) {
 		);
 		remove(filename);
 		chdir("..");
-		send_response(sd, !ok);
+		send_response(!ok);
 		return -1;
 	} else {
 		printf("Ricevuti %ld byte di file\n", recv_tot);
 	}
 
 	chdir("..");
-	send_response(sd, ok);
+	send_response(ok);
 	return 0;
 }
 
 // riceve due stringhe dal server, la prima sarà il comando e la seconda l'argomento
 // NOTA: in caso di errore i puntatori NON sono validi e non serve liberare memoria
-int receive_command(int sd, char **cmd, char **arg) {
+int receive_command(char **cmd, char **arg) {
 	char *command = NULL, *argument = NULL;
 
 	// --- RICEZIONE LUNGHEZZA COMANDO --- //
@@ -295,16 +296,16 @@ int receive_command(int sd, char **cmd, char **arg) {
 }
 
 // gestisce il socket di un client
-int client_process(int sd) {
+int client_process(void) {
 	while (1) {
 		char *cmd, *arg;
-		if (receive_command(sd, &cmd, &arg) < 0) {
+		if (receive_command(&cmd, &arg) < 0) {
 			fprintf(stderr, "Impossibile ricevere il comando\n");
 			continue;
 		}
 
 		if (strcmp(cmd, "quit")) {
-			send_response(sd, ok);
+			send_response(ok);
 			// rimuovi la cartella
 			// visto che pid e' al massimo un numero di 5 caratteri, creo un
 			// buffer di un ordine di grandezza maggiore: 64
@@ -321,7 +322,7 @@ int client_process(int sd) {
 				continue;
 			}
 
-			if (receive_file(sd, filename) < 0) {
+			if (receive_file(filename) < 0) {
 				fprintf(stderr, "Impossibile ricevere il file %s\n", filename);
 				continue;
 			}
@@ -335,7 +336,7 @@ int client_process(int sd) {
 				continue;
 			}
 
-			if (compress_folder(sd, alg[0]) < 0) {
+			if (compress_folder(alg[0]) < 0) {
 				continue;
 			}
 
@@ -355,7 +356,7 @@ int main(int argc, char *argv[]) {
 	// --- CREAZIONE SOCKET --- //
 	int				   *sd;
 	struct sockaddr_in *sa;
-	if (socket_stream(*addr_str, port_no, *sd, *sa) < 0) {
+	if (socket_stream(*addr_str, port_no, *sa) < 0) {
 		printf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
