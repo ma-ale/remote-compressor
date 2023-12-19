@@ -13,6 +13,20 @@
 // abbiamo deciso di mettere sd globale per poter fare la signal(SIGINT, quit);
 int sd = -1;
 
+int get_filename(char ext, const char *file_name[]) {
+	char base_name[64] = "archivio_compresso.tar";
+	if (ext == 'z') {
+		strcat(base_name, ".gz");
+	} else if (ext == 'j') {
+		strcat(base_name, ".bz2");
+	} else {
+		fprintf(stderr, "Estensione file non riconosciuta: %c\n", ext);
+		return -1;
+	}
+	*file_name = strdup(base_name);	 // linuk non fallisce mai di memoria ;)
+	return 0;
+}
+
 void quit() {
 	if (close(sd) < 0) {
 		fprintf(stderr, "Impossibile chiudere il socket: %s\n", strerror(errno));
@@ -134,6 +148,12 @@ int main(int argc, char *argv[]) {
 				fprintf(stderr, "Campo [alg] non valido\n");
 				continue;
 			}
+			const char *path;
+			// mette l'estensione al nome del file a seconda dell'algoritmo
+			get_filename(algoritmo, &path);
+			// ora ho dove voglio creare il file da ricevere, quello compresso
+			receive_file(path);
+
 		} else if (strcmp(cmd, "add")) {
 			if (arg == NULL) {
 				fprintf(stderr, "Campo [file] mancante\n");

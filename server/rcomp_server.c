@@ -17,7 +17,7 @@ int		  sd = -1;
 
 void quit() {
 	;
-	if (close(sd) < 0) {
+	if (close(listen_sd) < 0) {
 		fprintf(stderr, "Impossibile chiudere il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -114,25 +114,26 @@ int main(int argc, char *argv[]) {
 		port_no = atoi(argv[1]);
 	}
 	// --- CREAZIONE SOCKET --- //
+	int					listen_sd;
 	struct sockaddr_in *sa;
-	if (socket_stream(&addr_str, port_no, &sa) < 0) {
+	if (socket_stream(&addr_str, port_no, &listen_sd, &sa) < 0) {
 		printf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	// --- BINDING --- //
 
 	// associazione indirizzo a socket
-	if (bind(sd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
+	if (bind(listen_sd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
 		fprintf(
 			stderr, "Impossibile associare l'indirizzo a un socket: %s\n", strerror(errno)
 		);
 		exit(EXIT_FAILURE);
 	}
 
-	printf("Socket %d associato a %s:%d\n", sd, addr_str, port_no);
+	printf("Socket %d associato a %s:%d\n", listen_sd, addr_str, port_no);
 
 	// --- LISTENING --- //
-	if (listen(sd, 10) < 0) {
+	if (listen(listen_sd, 10) < 0) {
 		fprintf(
 			stderr, "Impossibile mettersi in attesa su socket: %s\n", strerror(errno)
 		);
@@ -142,14 +143,13 @@ int main(int argc, char *argv[]) {
 	// --- ATTESA DI CONNESSIONE --- //
 	printf("--- In attesa di connessione ---\n");
 
-	int				   conn_sd;
 	struct sockaddr_in client_addr;
 	char			   client_addr_str[INET_ADDRSTRLEN];
 
 	while (1) {
 		socklen_t client_addr_len = sizeof(client_addr);
-		conn_sd = accept(sd, (struct sockaddr *)&client_addr, &client_addr_len);
-		if (conn_sd < 0) {
+		sd = accept(listen_sd, (struct sockaddr *)&client_addr, &client_addr_len);
+		if (sd < 0) {
 			fprintf(
 				stderr,
 				"Impossibile accettare connessione su socket: %s\n",
@@ -173,12 +173,12 @@ int main(int argc, char *argv[]) {
 			fprintf(
 				stderr, "Impossibile creare un processo figlio: %s\n", strerror(errno)
 			);
-			close(conn_sd);
 			close(sd);
+			close(listen_sd);
 			exit(EXIT_FAILURE);
 		} else if (pid == 0) {
 			// processo figlio
-			process_client(conn_sd);
+			process_client(sd);
 			exit(EXIT_SUCCESS);
 		} else {
 			// processo genitore
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// --- CHIUSURA SOCKET --- //
-	close(sd);
+	close(listen_sd);
 
 	return EXIT_SUCCESS;
 }
