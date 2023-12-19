@@ -1,3 +1,6 @@
+#define _XOPEN_SOURCE	500
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,13 +28,12 @@ void quit() {
 }
 
 int read_command(char *str, char **com, char **arg) {
-	char  *command = NULL, *argument = NULL, *tmp;
-	char **saveptr;
-	int	   argc = 0;
+	char *command = NULL, *argument = NULL, *tmp;
+	int	  argc = 0;
 
 	// divido la stringa in token divisi da spazi, salvo il primo come comando
 	// e il secondo come argomento
-	for (; (tmp = strtok_r(str, " ", saveptr)) != NULL; argc++) {
+	for (; (tmp = strtok(str, " ")) != NULL; argc++) {
 		if (argc == 0) {
 			command = tmp;
 		} else if (argc == 1) {

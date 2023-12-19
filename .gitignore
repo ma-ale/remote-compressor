@@ -3,15 +3,14 @@
 server/server
 client/client
 
-server/server_esercizio.exe
-client/client_esercizio.exe
 server/server_esercizio
 client/client_esercizio
 
-server/rcomp_server.exe
-client/rcomp_client.exe
 server/rcomp_server
 client/rcomp_client
 
 client/provaquit.exe
 client/provaquit
+
+**/*.o
+**/*.exe
