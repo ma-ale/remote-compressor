@@ -362,7 +362,7 @@ int main(int argc, char *argv[]) {
 	(void)argv;
 	// TODO: prendi l'indirizzo e la porta da riga di comando
 	const char *addr_str = "127.0.0.1";
-	int			port_no	 = 10000;
+	int			port_no	 = 1234;
 	if (argc == 3) {
 		addr_str = argv[1];	 // oppure strdup
 		port_no	 = atoi(argv[2]);
@@ -379,7 +379,7 @@ int main(int argc, char *argv[]) {
 	while (1) {
 		const unsigned int CMD_MAX = 1024;
 		char			   userinput[CMD_MAX];
-		printf("Inserire comando:\n");
+		printf("rcomp> ");
 		if (scanf("%1023s", &userinput) < 0) {
 			fprintf(stderr, "Impossibile accettare comando: %s\n", strerror(errno));
 			continue;

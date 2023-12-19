@@ -358,14 +358,21 @@ int client_process(void) {
 }
 
 int main(int argc, char *argv[]) {
+	// leggi gli argomenti dal terminale e determina l'indirizzo del server
+	// e la porta
+	//		argv[1] = porta
 	(void)argc;
 	(void)argv;
-	char *addr_str = "127.0.0.1";
-	int	  port_no  = 10000;
-
+	// metto di default porta se argc < 2
+	const char *addr_str = "127.0.0.1";
+	int			port_no	 = 1234;
+	// prendi l'indirizzo e la porta da riga di comando
+	if (argc == 2) {
+		port_no = atoi(argv[1]);
+	}
 	// --- CREAZIONE SOCKET --- //
 	struct sockaddr_in *sa;
-	if (socket_stream(*addr_str, port_no, *sa) < 0) {
+	if (socket_stream(&addr_str, port_no, &sa) < 0) {
 		printf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
