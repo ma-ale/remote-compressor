@@ -119,28 +119,21 @@ int main(int argc, char *argv[]) {
 			close(sd);	// quit del client
 			exit(EXIT_SUCCESS);
 		} else if (strcmp(cmd, "compress")) {
-			char algoritmo = 'z';
 			// bisogna leggere arg, se non e' NULL allora lo cambio
-			if (arg != NULL && (strlen(arg) == 1)) {
-				algoritmo = arg[0];
+			if (arg == NULL) {
+				arg = "z";
 			}
-			// se esiste un secondo argomento sostituiscilo ad
-			// "algoritmo", gli passo direttamente z o j il nome
-			// dell'archivio viene scelto automaticamente dal server
-			// archivio come enum??
-			if (algoritmo == 'z') {
-				// comprimi con algoritmo gzip
-				send_command("compress", "cz");
-			} else if (algoritmo == 'j') {
-				// comprimi con algoritmo bzip2
-				send_command("compress", "cj");
-			} else {
+
+			if (strcmp(arg, "z") != 0 && strcmp(arg, "j") != 0) {
 				fprintf(stderr, "Campo [alg] non valido\n");
 				continue;
 			}
+
+			send_command("compress", arg);
+
 			char *path;
 			// mette l'estensione al nome del file a seconda dell'algoritmo
-			get_filename(algoritmo, &path);
+			get_filename(arg[0], &path);
 			// ora ho dove voglio creare il file da ricevere, quello compresso
 			receive_file(path);
 			free(path);
