@@ -4,6 +4,8 @@
 #include <errno.h>
 #include <unistd.h>
 #include <limits.h>
+#include <ctype.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -16,13 +18,13 @@ int sd = -1;
 void quit() {
 	if (close(sd) < 0) {
 		fprintf(stderr, "Impossibile chiudere il socket: %s\n", strerror(errno));
-		exit(EXIT_FAILURE)
+		exit(EXIT_FAILURE);
 	}
 	printf("Chiusura del socket avvenuta con successo\n");
 	exit(EXIT_SUCCESS);
 }
 
-int read_command(char *str, const char **com, const char **arg) {
+int read_command(char *str, char **com, char **arg) {
 	char  *command = NULL, *argument = NULL, *tmp;
 	char **saveptr;
 	int	   argc = 0;
@@ -93,7 +95,7 @@ int main(int argc, char *argv[]) {
 		const unsigned int CMD_MAX = 1024;
 		char			   userinput[CMD_MAX];
 		printf("rcomp> ");
-		if (scanf("%1023s", &userinput) < 0) {
+		if (scanf("%1023s", userinput) < 0) {
 			fprintf(stderr, "Impossibile accettare comando: %s\n", strerror(errno));
 			continue;
 		}

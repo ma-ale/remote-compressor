@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <arpa/inet.h>
 
 #include "../common.h"
@@ -17,7 +18,7 @@ int		  sd = -1;
 
 void quit() {
 	;
-	if (close(listen_sd) < 0) {
+	if (close(sd) < 0) {
 		fprintf(stderr, "Impossibile chiudere il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -40,7 +41,7 @@ int compress_folder(const char *dirname, const char *archivename, char alg) {
 }
 
 // gestisce il socket di un client
-int client_process(void) {
+int process_client(void) {
 	char *cmd = NULL, *arg = NULL;
 
 	// nome della mia personalissima cartella
@@ -153,9 +154,9 @@ int main(int argc, char *argv[]) {
 		port_no = atoi(argv[1]);
 	}
 	// --- CREAZIONE SOCKET --- //
-	int					listen_sd;
-	struct sockaddr_in *sa;
-	if (socket_stream(&addr_str, port_no, &listen_sd, &sa) < 0) {
+	int				   listen_sd;
+	struct sockaddr_in sa;
+	if (socket_stream(addr_str, port_no, &listen_sd, &sa) < 0) {
 		printf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
