@@ -7,6 +7,17 @@
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
+// abbiamo deciso di mettere sd globale per poter fare la signal(SIGINT, quit);
+int sd = -1;
+
+void quit() {
+	if (close(sd) < 0) {
+		fprintf(stderr, "Impossibile chiudere il socket: %s\n", strerror(errno));
+		exit(EXIT_FAILURE)
+	}
+	printf("Chiusura del socket avvenuta con successo\n");
+	exit(EXIT_SUCCESS);
+}
 
 int read_command(char *str, const char **com, const char **arg) {
 	char  *command = NULL, *argument = NULL, *tmp;
@@ -33,10 +44,9 @@ int read_command(char *str, const char **com, const char **arg) {
 }
 
 // manda un comando testuale al server come "quit" e "compress"
-// sd: descriptor del socket
 // str: stringa che contiene il comando
 // esempio: send_command(sd, "exit");
-int send_command(int sd, const char *com, const char *arg) {
+int send_command(const char *com, const char *arg) {
 	// --- INVIO LUNGHEZZA --- //
 	// conversione a formato network (da big endian a little endian)
 	size_t com_len	  = strlen(com);
@@ -74,7 +84,7 @@ int send_command(int sd, const char *com, const char *arg) {
 
 	// ascolta la risposta del server
 	printf("Verifica risposta dal server...\n");
-	if (receive_response(sd) < 0) {
+	if (receive_response() < 0) {
 		return -1;
 	}
 
@@ -122,7 +132,7 @@ int send_command(int sd, const char *com, const char *arg) {
 	}
 	// ascolta la risposta del server
 	printf("Verifica risposta dal server...\n");
-	if (receive_response(sd) < 0) {
+	if (receive_response() < 0) {
 		return -1;
 	}
 
@@ -134,7 +144,7 @@ int send_command(int sd, const char *com, const char *arg) {
 // aspetta un messaggio di risposta dal server, ritorna 0 se "OK"
 // oppure negativo se ci sono stati errori o "NON OK"
 // di solito usata dopo ogni messaggio, non quello della lunghezza del messaggio
-int receive_response(int sd) {
+int receive_response() {
 	ssize_t rcvd_bytes;
 	char	resp[3];
 	rcvd_bytes = recv(sd, &resp, 2, 0);
@@ -178,7 +188,7 @@ ssize_t file_dimension(const char *path) {
 	return file_size;
 }
 
-int send_file(int sd, const char *path) {
+int send_file(const char *path) {
 	ssize_t file_dim = file_dimension(path);
 	if (file_dim < 0) {
 		// l'errore specifico viene stampato da file_dimension()
@@ -233,7 +243,7 @@ int send_file(int sd, const char *path) {
 	}
 	// ascolta la risposta del server
 	printf("Verifica risposta dal server...\n");
-	if (receive_response(sd) < 0) {
+	if (receive_response() < 0) {
 		return -1;
 	}
 
@@ -242,7 +252,7 @@ int send_file(int sd, const char *path) {
 	return 0;
 }
 
-int receive_file(int sd, char ext) {
+int receive_file(char ext) {
 	char path[64] = "archivio_compresso.tar";
 	if (ext == 'z') {
 		strcat(path, ".gz");
@@ -303,9 +313,9 @@ int receive_file(int sd, char ext) {
 	return 0;
 }
 
-int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa) {
-	*sd = socket(AF_INET, SOCK_STREAM, 0);
-	if (*sd < 0) {
+int socket_stream(const char *addr_str, int port_no, struct sockaddr_in *sa) {
+	sd = socket(AF_INET, SOCK_STREAM, 0);
+	if (sd < 0) {
 		fprintf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		return -1;
 	}
@@ -323,7 +333,7 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 	return 0;
 }
 
-int connect_to_server(int sd, struct sockaddr_in *sa) {
+int connect_to_server(struct sockaddr_in *sa) {
 	if (connect(sd, (struct sockaddr *)&sa, sizeof(struct sockaddr_in)) < 0) {
 		fprintf(stderr, "Impossibile connettersi: %s\n", strerror(errno));
 		return -1;
@@ -358,13 +368,13 @@ int main(int argc, char *argv[]) {
 		port_no	 = atoi(argv[2]);
 	}
 	// creazione del socket
-	int				   sd;
 	struct sockaddr_in sa;
-	if (socket_stream(&addr_str, port_no, &sd, &sa) < 0) {
+	if (socket_stream(&addr_str, port_no, &sa) < 0) {
 		fprintf(stderr, "Impossibile creare il socket\n");
 		exit(EXIT_FAILURE);
 	}
-
+	// per rendere la chiusura con ^C piu' gentile, faccio fare la quit
+	signal(SIGINT, quit);
 	// loop
 	while (1) {
 		const unsigned int CMD_MAX = 1024;
@@ -388,7 +398,7 @@ int main(int argc, char *argv[]) {
 		if (strcmp(cmd, "help")) {
 			help();
 		} else if (strcmp(cmd, "quit")) {
-			send_command(sd, "quit", NULL);
+			send_command("quit", NULL);
 			close(sd);	// quit del client
 			exit(EXIT_SUCCESS);
 		} else if (strcmp(cmd, "compress")) {
@@ -403,10 +413,10 @@ int main(int argc, char *argv[]) {
 			// archivio come enum??
 			if (algoritmo == 'z') {
 				// comprimi con algoritmo gzip
-				send_command(sd, "compress", "cz");
+				send_command("compress", "cz");
 			} else if (algoritmo == 'j') {
 				// comprimi con algoritmo bzip2
-				send_command(sd, "compress", "cj");
+				send_command("compress", "cj");
 			} else {
 				fprintf(stderr, "Campo [alg] non valido\n");
 				continue;
@@ -439,8 +449,8 @@ int main(int argc, char *argv[]) {
 				continue;
 			}
 
-			send_command(sd, "add", filename);
-			if (send_file(sd, arg) < 0) {
+			send_command("add", filename);
+			if (send_file(arg) < 0) {
 				fprintf(stderr, "Errore nel trasferimento del file %s\n", filename);
 				return -1;
 			}

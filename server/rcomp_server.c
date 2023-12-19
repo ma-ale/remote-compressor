@@ -428,6 +428,7 @@ int main(int argc, char *argv[]) {
 				);
 			}
 			printf("Il processo %d ha terminato", pid);
+			/* qua il padre pulisce per il figlio la directory e il file */
 		}
 	}
 
