@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
 	}
 	// creazione del socket
 	struct sockaddr_in sa;
-	if (socket_stream(&addr_str, port_no, &sa) < 0) {
+	if (socket_stream(&addr_str, port_no, &sd, &sa) < 0) {
 		fprintf(stderr, "Impossibile creare il socket\n");
 		exit(EXIT_FAILURE);
 	}
