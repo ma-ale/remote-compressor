@@ -1,3 +1,6 @@
+#define _XOPEN_SOURCE	500
+#define _POSIX_C_SOURCE 200809L
+
 #include <sys/stat.h>
 #include <arpa/inet.h>
 
@@ -93,7 +96,7 @@ int send_file(const char *path) {
 
 	uint32_t msg_len = htonl(file_dim);
 
-	size_t sent_bytes = send(sd, &msg_len, sizeof(uint32_t), 0);
+	ssize_t sent_bytes = send(sd, &msg_len, sizeof(uint32_t), 0);
 	if (sent_bytes < 0) {
 		fprintf(stderr, "Impossibile inviare dati: %s\n", strerror(errno));
 		return -1;
@@ -102,7 +105,7 @@ int send_file(const char *path) {
 	FILE *file = fopen(path, "r");
 
 	// manda il file byte per byte
-	size_t sent_tot = 0;
+	ssize_t sent_tot = 0;
 	while (1) {
 		char buff[1];
 		int	 c = fgetc(file);
@@ -116,7 +119,7 @@ int send_file(const char *path) {
 			return -1;
 		}
 		sent_tot += sent_bytes;
-		if (sent_tot >= (size_t)file_dim) {
+		if (sent_tot >= file_dim) {
 			break;
 		}
 	}
@@ -218,9 +221,9 @@ int receive_response() {
 int send_command(const char *com, const char *arg) {
 	// --- INVIO LUNGHEZZA COMANDO --- //
 	// conversione a formato network (da big endian a little endian)
-	size_t com_len	  = strlen(com);
-	int	   msg_len	  = htonl(com_len);
-	size_t sent_bytes = send(sd, &msg_len, sizeof(int), 0);
+	ssize_t com_len	   = strlen(com);
+	int		msg_len	   = htonl(com_len);
+	ssize_t sent_bytes = send(sd, &msg_len, sizeof(int), 0);
 	if (sent_bytes < 0) {
 		fprintf(stderr, "Impossibile inviare dati comando: %s\n", strerror(errno));
 		return -1;
@@ -229,8 +232,8 @@ int send_command(const char *com, const char *arg) {
 
 	// --- INVIO TESTO COMANDO --- //
 	// manda il comando byte per byte
-	size_t sent_tot = 0;
-	char   buff[1];
+	ssize_t sent_tot = 0;
+	char	buff[1];
 	while (1) {
 		buff[0]	   = com[sent_tot];
 		sent_bytes = send(sd, buff, 1, 0);
@@ -239,9 +242,9 @@ int send_command(const char *com, const char *arg) {
 			return -1;
 		}
 		sent_tot += sent_bytes;
-		if (sent_tot == (size_t)com_len) {
+		if (sent_tot == com_len) {
 			break;
-		} else if (sent_tot > (size_t)com_len) {  // ROBA IN PIU'!!!
+		} else if (sent_tot > com_len) {  // ROBA IN PIU'!!!
 			fprintf(
 				stderr,
 				"Invio comando fallito: inviati %ld byte in piu' della dimensione del "
@@ -265,9 +268,9 @@ int send_command(const char *com, const char *arg) {
 		int msg_len = 0;
 		send(sd, &msg_len, sizeof(int), 0);
 	} else {
-		size_t arg_len = strlen(arg);
-		msg_len		   = htonl(arg_len);
-		sent_bytes	   = send(sd, &msg_len, sizeof(int), 0);
+		ssize_t arg_len = strlen(arg);
+		msg_len			= htonl(arg_len);
+		sent_bytes		= send(sd, &msg_len, sizeof(int), 0);
 		if (sent_bytes < 0) {
 			fprintf(stderr, "Impossibile inviare dati argomento: %s\n", strerror(errno));
 			return -1;
@@ -287,9 +290,9 @@ int send_command(const char *com, const char *arg) {
 				return -1;
 			}
 			sent_tot += sent_bytes;
-			if (sent_tot == (size_t)arg_len) {
+			if (sent_tot == arg_len) {
 				break;
-			} else if (sent_tot > (size_t)arg_len) {  // ROBA IN PIU'!!!
+			} else if (sent_tot > arg_len) {  // ROBA IN PIU'!!!
 				fprintf(
 					stderr,
 					"Invio argomento fallito: inviati %ld byte in piu' della dimensione "
@@ -324,7 +327,7 @@ int receive_command(char **cmd, char **arg) {
 	cmd_dim = ntohl(msg_len);
 
 	// --- RICEZIONE TESTO COMANDO --- //
-	if ((command = malloc((size_t)cmd_dim + 1)) == NULL) {
+	if ((command = malloc(cmd_dim + 1)) == NULL) {
 		fprintf(
 			stderr, "Impossibile allocare memoria per il comando: %s\n", strerror(errno)
 		);
@@ -362,7 +365,7 @@ int receive_command(char **cmd, char **arg) {
 	if (arg_dim == 0) {
 		*arg = NULL;
 	} else {
-		if ((argument = malloc((size_t)arg_dim + 1)) == NULL) {
+		if ((argument = malloc(arg_dim + 1)) == NULL) {
 			fprintf(
 				stderr,
 				"Impossibile allocare memoria per l'argomento: %s\n",

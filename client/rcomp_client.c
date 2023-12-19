@@ -1,9 +1,14 @@
+#define _XOPEN_SOURCE	500
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
 #include <unistd.h>
 #include <limits.h>
+#include <ctype.h>
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -16,20 +21,19 @@ int sd = -1;
 void quit() {
 	if (close(sd) < 0) {
 		fprintf(stderr, "Impossibile chiudere il socket: %s\n", strerror(errno));
-		exit(EXIT_FAILURE)
+		exit(EXIT_FAILURE);
 	}
 	printf("Chiusura del socket avvenuta con successo\n");
 	exit(EXIT_SUCCESS);
 }
 
-int read_command(char *str, const char **com, const char **arg) {
-	char  *command = NULL, *argument = NULL, *tmp;
-	char **saveptr;
-	int	   argc = 0;
+int read_command(char *str, char **com, char **arg) {
+	char *command = NULL, *argument = NULL, *tmp;
+	int	  argc = 0;
 
 	// divido la stringa in token divisi da spazi, salvo il primo come comando
 	// e il secondo come argomento
-	for (; (tmp = strtok_r(str, " ", saveptr)) != NULL; argc++) {
+	for (; (tmp = strtok(str, " ")) != NULL; argc++) {
 		if (argc == 0) {
 			command = tmp;
 		} else if (argc == 1) {
@@ -82,7 +86,7 @@ int main(int argc, char *argv[]) {
 	}
 	// creazione del socket
 	struct sockaddr_in sa;
-	if (socket_stream(&addr_str, port_no, &sd, &sa) < 0) {
+	if (socket_stream(addr_str, port_no, &sd, &sa) < 0) {
 		fprintf(stderr, "Impossibile creare il socket\n");
 		exit(EXIT_FAILURE);
 	}
@@ -93,7 +97,7 @@ int main(int argc, char *argv[]) {
 		const unsigned int CMD_MAX = 1024;
 		char			   userinput[CMD_MAX];
 		printf("rcomp> ");
-		if (scanf("%1023s", &userinput) < 0) {
+		if (scanf("%1023s", userinput) < 0) {
 			fprintf(stderr, "Impossibile accettare comando: %s\n", strerror(errno));
 			continue;
 		}
@@ -150,7 +154,7 @@ int main(int argc, char *argv[]) {
 			int invalid_name = 0;
 			for (int i = 0; i < strlen(filename); i++) {
 				if (!isascii(filename[i]) && !isalpha(filename[i]) &&
-					!isnum(filename[i]) && filename[i] != '.') {
+					!isdigit(filename[i]) && filename[i] != '.') {
 					invalid_name = 1;
 					break;
 				}
