@@ -113,7 +113,7 @@ int send_file(const char *path) {
 	}
 	printf(YELLOW("\tInviati %ld bytes di lunghezza file\n"), sent_bytes);
 
-	FILE *file = fopen(path, "r");
+	FILE *file = fopen(path, "rb");
 
 	// manda il file byte per byte
 	ssize_t sent_tot = 0;
@@ -147,7 +147,7 @@ int send_file(const char *path) {
 
 int receive_file(const char *path) {
 	// apri o crea il file specificato da path in scrittura, troncato a zero
-	FILE *file = fopen(path, "w+");
+	FILE *file = fopen(path, "w+b");
 	if (file == NULL) {
 		fprintf(stderr, MAGENTA("\tImpossibile aprire il file: %s\n"), strerror(errno));
 		return -1;
