@@ -159,7 +159,9 @@ int main(int argc, char *argv[]) {
 			send_command("compress", arg);
 
 			if (receive_response() < 0) {
-				fprintf(stderr, MAGENTA("\tIl server ha fallito nel comprimere i file\n"));
+				fprintf(
+					stderr, MAGENTA("\tIl server ha fallito nel comprimere i file\n")
+				);
 				continue;
 			}
 
@@ -188,8 +190,8 @@ int main(int argc, char *argv[]) {
 			int	   invalid_name = 0;
 			size_t fname_len	= strlen(filename);
 			for (size_t i = 0; i < fname_len; i++) {
-				if (isascii(filename[i]) || isalpha(filename[i]) ||
-					isdigit(filename[i]) || filename[i] == '.') {
+				if (!isascii(filename[i]) && !isalpha(filename[i]) &&
+					!isdigit(filename[i]) && filename[i] != '.') {
 					invalid_name = 1;
 					break;
 				}
