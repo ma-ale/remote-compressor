@@ -53,7 +53,12 @@ int process_client(void) {
 
 	while (1) {
 		if (receive_command(&cmd, &arg) < 0) {
+			// su windows SIGPIPE e EPIPE non sono supportati causando un ciclo infinito
 			fprintf(stderr, "Impossibile ricevere il comando\n");
+			if (errno == ECONNABORTED || errno == ECONNREFUSED) {
+				close(sd);
+				exit(EXIT_FAILURE);
+			}
 			continue;
 		}
 
