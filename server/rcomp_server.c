@@ -16,8 +16,8 @@
 
 #include "../common.h"
 
-const int ok = 1;
-int		  sd = -1;
+static const int OK = 1;
+int				 sd = -1;
 
 void quit() {
 	if (close(sd) < 0) {
@@ -35,8 +35,9 @@ int compress_folder(const char *dirname, const char *archivename, char alg) {
 	char cmd[256];
 	snprintf(cmd, sizeof(cmd), "tar -c -%c -f %s %s", alg, archivename, dirname);
 
+	printf("Esecuzione comando: '%s'\n", cmd);
 	if (system(cmd) != 0) {
-		fprintf(stderr, "Impossibile fare la system() %s\n", strerror(errno));
+		fprintf(stderr, "Comando fallito\n");
 		return -1;
 	}
 	return 0;
@@ -57,7 +58,7 @@ int process_client(void) {
 		}
 
 		if (strcmp(cmd, "quit") == 0) {
-			send_response(ok);
+			send_response(OK);
 			// rimuovi la cartella
 			char command[sizeof("rm -rf ") + sizeof(myfolder)];
 			snprintf(command, sizeof(command), "rm -rf %s", myfolder);
@@ -112,8 +113,10 @@ int process_client(void) {
 
 			if (e < 0) {
 				fprintf(stderr, "Impossibile comprimere %s\n", myfolder);
+				send_response(!OK);
 				goto free_args;
 			}
+			send_response(OK);
 
 			e = send_file(archivename);
 			if (e < 0) {

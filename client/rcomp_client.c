@@ -146,6 +146,11 @@ int main(int argc, char *argv[]) {
 
 			send_command("compress", arg);
 
+			if (receive_response() < 0) {
+				fprintf(stderr, "Il server ha fallito nel comprimere i file\n");
+				continue;
+			}
+
 			char *path;
 			// mette l'estensione al nome del file a seconda dell'algoritmo
 			get_filename(arg[0], &path);
