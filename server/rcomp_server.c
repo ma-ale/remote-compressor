@@ -1,3 +1,6 @@
+#define _XOPEN_SOURCE	500
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -17,7 +20,6 @@ const int ok = 1;
 int		  sd = -1;
 
 void quit() {
-	;
 	if (close(sd) < 0) {
 		fprintf(stderr, "Impossibile chiudere il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
@@ -114,11 +116,10 @@ int process_client(void) {
 			}
 
 			e = send_file(archivename);
-			free(archivename);
-
 			if (e < 0) {
-				fprintf(stderr, "Impossibile inviare l'archivio\n");
+				fprintf(stderr, "Impossibile inviare l'archivio %s\n", archivename);
 			}
+			free(archivename);
 		}
 
 	// brutte cose a me
@@ -139,8 +140,7 @@ int main(int argc, char *argv[]) {
 	// leggi gli argomenti dal terminale e determina l'indirizzo del server
 	// e la porta
 	//		argv[1] = porta
-	(void)argc;
-	(void)argv;
+
 	// metto di default porta se argc < 2
 	const char *addr_str = "127.0.0.1";
 	int			port_no	 = 1234;
@@ -213,7 +213,10 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		} else if (pid == 0) {
 			// processo figlio
-			process_client();
+			if (process_client() < 0) {
+				fprintf(stderr, "Processo figlio uscito con errore\n");
+				exit(EXIT_FAILURE);
+			}
 			exit(EXIT_SUCCESS);
 		} else {
 			// processo genitore
@@ -223,11 +226,12 @@ int main(int argc, char *argv[]) {
 				);
 			}
 			printf("Il processo %d ha terminato\n", pid);
-			/* qua il padre pulisce per il figlio la directory e il file */
+			// TODO: qua il padre pulisce per il figlio la directory e il file
 		}
 	}
 
 	// --- CHIUSURA SOCKET --- //
+	// FIXME: qui non ci arrivo mai, che devo fare?
 	close(listen_sd);
 
 	return EXIT_SUCCESS;
