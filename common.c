@@ -148,12 +148,18 @@ int receive_file(const char *path) {
 	}
 
 	// --- RICEZIONE LUNGHEZZA FILE --- //
-	int msg_len = 0, file_dim = 0;
+	uint32_t msg_len = 0, file_dim = 0;
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
 		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
 		return -1;
 	}
 	file_dim = ntohl(msg_len);
+
+	// il client ci dice che ha riscontrato un errore
+	if (file_dim == UINT32_MAX) {
+		fprintf(stderr, "Il client ha cancellato l'invio del file\n");
+		return -1;
+	}
 	printf("Ricevuti %d byte di lunghezza del file\n", file_dim);
 
 	// --- RICEZIONE FILE --- //
