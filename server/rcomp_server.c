@@ -35,7 +35,7 @@ int compress_folder(const char *dirname, const char *archivename, char alg) {
 	char cmd[256];
 	snprintf(cmd, sizeof(cmd), "tar -c -%c -f %s %s", alg, archivename, dirname);
 
-	printf("Esecuzione comando: '%s'\n", cmd);
+	printf(YELLOW("\tEsecuzione comando: '%s'\n"), cmd);
 	if (system(cmd) != 0) {
 		fprintf(stderr, MAGENTA("Comando fallito\n"));
 		return -1;
@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// --- ATTESA DI CONNESSIONE --- //
-	printf("--- In attesa di connessione ---\n");
+	printf(YELLOW("\t--- In attesa di connessione ---\n"));
 
 	struct sockaddr_in client_addr;
 	char			   client_addr_str[INET_ADDRSTRLEN];
