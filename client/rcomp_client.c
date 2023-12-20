@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
 			if (n_add < 1) {
 				fprintf(
 					stderr,
-					MAGENTA("\tERRORE: aggiungere almeno un file"
+					MAGENTA("\tERRORE: aggiungere almeno un file "
 							"prima di effettuare la compressione\n")
 				);
 				continue;
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
 			}
 			n_add++;
 		} else {
-			printf(MAGENTA("\tComnado non riconosciuto\n"));
+			printf(MAGENTA("\tComanado non riconosciuto\n"));
 			help();
 		}
 	}
