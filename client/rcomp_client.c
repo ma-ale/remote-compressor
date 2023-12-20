@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 			send_command("compress", arg);
 
 			if (receive_response() < 0) {
-				fprintf(stderr, "Il server ha fallito nel comprimere i file\n");
+				fprintf(stderr, MAGENTA("\tIl server ha fallito nel comprimere i file\n"));
 				continue;
 			}
 

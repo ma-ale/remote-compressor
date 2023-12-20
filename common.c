@@ -93,7 +93,7 @@ int send_file(const char *path) {
 	if (file_dim >= UINT32_MAX) {
 		fprintf(
 			stderr,
-			"Il file è troppo grande: %.2fGiB\n",
+			MAGENTA("\tIl file è troppo grande: %.2fGiB\n"),
 			(float)file_dim / (float)(1024 * 1024 * 1024)
 		);
 		uint32_t msg_len = UINT32_MAX;
@@ -163,7 +163,7 @@ int receive_file(const char *path) {
 
 	// il client ci dice che ha riscontrato un errore
 	if (file_dim == UINT32_MAX) {
-		fprintf(stderr, "Il client ha cancellato l'invio del file\n");
+		fprintf(stderr, MAGENTA("\tIl client ha cancellato l'invio del file\n"));
 		return -1;
 	}
 	printf(YELLOW("\tRicevuti %d byte di lunghezza del file\n"), file_dim);
