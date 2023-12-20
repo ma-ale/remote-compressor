@@ -184,10 +184,12 @@ int main(int argc, char *argv[]) {
 			if (foff != NULL) {
 				filename = foff + 1;
 			}
-			int invalid_name = 0;
-			for (size_t i = 0; i < strlen(filename); i++) {
-				if (!isascii(filename[i]) && !isalpha(filename[i]) &&
-					!isdigit(filename[i]) && filename[i] != '.') {
+
+			int	   invalid_name = 0;
+			size_t fname_len	= strlen(filename);
+			for (size_t i = 0; i < fname_len; i++) {
+				if (isascii(filename[i]) || isalpha(filename[i]) ||
+					isdigit(filename[i]) || filename[i] == '.') {
 					invalid_name = 1;
 					break;
 				}
