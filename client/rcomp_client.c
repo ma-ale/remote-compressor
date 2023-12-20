@@ -96,6 +96,8 @@ int main(int argc, char *argv[]) {
 
 	// per rendere la chiusura con ^C piu' gentile, faccio fare la quit
 	signal(SIGINT, quit);
+	// contatore della add
+    int n_add = 0;
 	// loop
 	while (1) {
 		const unsigned int CMD_MAX = 1024;
@@ -134,6 +136,11 @@ int main(int argc, char *argv[]) {
 			close(sd);	// quit del client
 			exit(EXIT_SUCCESS);
 		} else if (strcmp(cmd, "compress") == 0) {
+		    if (n_add < 1){
+                fprintf(stderr, "ERRORE: aggiungere almeno un file"
+                         "prima di effettuare la compressione\n");
+				continue;
+		    }
 			// bisogna leggere arg, se non e' NULL allora lo cambio
 			if (arg == NULL) {
 				arg = "z";
@@ -157,6 +164,7 @@ int main(int argc, char *argv[]) {
 			// ora ho dove voglio creare il file da ricevere, quello compresso
 			receive_file(path);
 			free(path);
+			n_add = 0;
 		} else if (strcmp(cmd, "add") == 0) {
 			if (arg == NULL) {
 				fprintf(stderr, "Campo [file] mancante\n");
@@ -190,6 +198,7 @@ int main(int argc, char *argv[]) {
 				fprintf(stderr, "Errore nel trasferimento del file %s\n", filename);
 				return -1;
 			}
+			n_add++;
 		} else {
 			printf("Comnado non riconosciuto\n");
 			help();
