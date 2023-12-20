@@ -14,5 +14,5 @@ client/provaquit
 
 **/*.o
 **/*.exe
-folder-*
-archivio_compresso.*
+**/folder-*
+**/archivio_compresso.*
