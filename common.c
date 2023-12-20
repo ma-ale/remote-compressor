@@ -129,7 +129,7 @@ int send_file(const char *path) {
 		return -1;
 	}
 
-	printf("Inviati %ld/%ld bytes di file\n", sent_bytes, file_dim);
+	printf("Inviati %ld/%ld bytes di file\n", sent_tot, file_dim);
 
 	return 0;
 }
@@ -156,14 +156,20 @@ int receive_file(const char *path) {
 	ssize_t rcvd_bytes = 0;
 	ssize_t recv_tot   = 0;
 	while (recv_tot < (ssize_t)file_dim) {
-		if ((rcvd_bytes = recv(sd, &buff, 1, 0)) < 0) {
+		rcvd_bytes = recv(sd, buff, 1, 0);
+		if (rcvd_bytes < 0) {
 			fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
-			// MANDARE SEND_RESPONSE NO
+			// send_response(!OK);
 			fclose(file);
 			remove(path);
 			return -1;
 		}
-		fputc(buff[0], file);
+		if (fputc(buff[0], file) == EOF) {
+			fprintf(stderr, "Errore nella scrittura del file\n");
+			fclose(file);
+			remove(path);
+			return -1;
+		}
 		recv_tot += rcvd_bytes;
 	}
 
@@ -178,9 +184,9 @@ int receive_file(const char *path) {
 		remove(path);
 		send_response(!OK);
 		return -1;
-	} else {
-		printf("File %s ricevuto. Ricevuti %ld byte\n", path, recv_tot);
 	}
+
+	printf("File %s ricevuto. Ricevuti %ld byte\n", path, recv_tot);
 	send_response(OK);
 	return 0;
 }
@@ -192,7 +198,7 @@ int send_response(int ok) {
 			return -1;
 		}
 	} else {
-		if (send(sd, "NO", 2, 0) < 0) {
+		if (send(sd, "UH", 2, 0) < 0) {
 			fprintf(stderr, "Impossibile inviare risposta al client\n");
 			return -1;
 		}
@@ -203,7 +209,7 @@ int send_response(int ok) {
 int receive_response() {
 	ssize_t rcvd_bytes;
 	char	resp[3];
-	rcvd_bytes = recv(sd, &resp, 2, 0);
+	rcvd_bytes = recv(sd, resp, 2, 0);
 	if (rcvd_bytes < 0) {
 		fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
 		return -1;
@@ -276,8 +282,8 @@ int send_command(const char *com, const char *arg) {
 			return -1;
 		}
 		printf("Inviati %ld bytes di lunghezza argomento\n", sent_bytes);
-		// --- INVIO TESTO ARGOMENTO --- //
 
+		// --- INVIO TESTO ARGOMENTO --- //
 		// manda l'argomento byte per byte
 		sent_tot = 0;
 		while (1) {
@@ -337,12 +343,14 @@ int receive_command(char **cmd, char **arg) {
 
 	// riceve il comando byte per byte
 	ssize_t recv_tot = 0, rcvd_bytes = 0;
+	char	buf[1];
 	while (recv_tot < (ssize_t)cmd_dim) {
-		if ((rcvd_bytes = recv(sd, &command[recv_tot], 1, 0)) < 0) {
+		if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
 			fprintf(stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno));
 			free(command);
 			return -1;
 		}
+		command[recv_tot] = buf[0];
 		recv_tot += rcvd_bytes;
 	}
 	*cmd = command;
@@ -379,7 +387,7 @@ int receive_command(char **cmd, char **arg) {
 		// riceve l'argomento byte per byte
 		recv_tot = 0, rcvd_bytes = 0;
 		while (recv_tot < (ssize_t)arg_dim) {
-			if ((rcvd_bytes = recv(sd, &argument[recv_tot], 1, 0)) < 0) {
+			if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
 				fprintf(
 					stderr, "Impossibile ricevere dati su socket: %s\n", strerror(errno)
 				);
@@ -387,6 +395,7 @@ int receive_command(char **cmd, char **arg) {
 				free(argument);
 				return -1;
 			}
+			argument[recv_tot] = buf[0];
 			recv_tot += rcvd_bytes;
 		}
 		*arg = argument;

@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
 		const unsigned int CMD_MAX = 1024;
 		char			   userinput[CMD_MAX];
 		printf("rcomp> ");
-		if (scanf("%1023s", userinput) < 0) {
+		if (fgets(userinput, sizeof(userinput) - 1, stdin) == NULL) {
 			fprintf(stderr, "Impossibile accettare comando: %s\n", strerror(errno));
 			continue;
 		}
