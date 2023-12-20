@@ -33,7 +33,7 @@ int read_command(char *str, char **com, char **arg) {
 
 	// divido la stringa in token divisi da spazi, salvo il primo come comando
 	// e il secondo come argomento
-	for (; (tmp = strtok(str, " ")) != NULL; argc++) {
+	for (char *s = str; (tmp = strtok(s, " ")) != NULL; argc++, s = NULL) {
 		if (argc == 0) {
 			command = tmp;
 		} else if (argc == 1) {
@@ -51,7 +51,7 @@ int read_command(char *str, char **com, char **arg) {
 }
 
 int connect_to_server(struct sockaddr_in *sa) {
-	if (connect(sd, (struct sockaddr *)&sa, sizeof(struct sockaddr_in)) < 0) {
+	if (connect(sd, (struct sockaddr *)sa, sizeof(struct sockaddr_in)) < 0) {
 		fprintf(stderr, "Impossibile connettersi: %s\n", strerror(errno));
 		return -1;
 	}
@@ -65,7 +65,7 @@ void help(void) {
 		"add [file]\n --> invia il file specificato al server remoto\n"
 		"compress [alg]\n --> riceve dal server remoto "
 		"l'archivio compresso secondo l'algoritmo specificato\n"
-		"quit\n --> disconnessione\n"
+		"quit\n --> disconnessione\n\n"
 	);
 }
 
@@ -75,8 +75,7 @@ int main(int argc, char *argv[]) {
 	//		argv[1] = indirizzo
 	//		argv[2] = porta
 	// metto di default porta e indirizzo se argc < 3
-	(void)argc;
-	(void)argv;
+
 	// prendi l'indirizzo e la porta da riga di comando
 	const char *addr_str = "127.0.0.1";
 	int			port_no	 = 1234;
@@ -90,6 +89,11 @@ int main(int argc, char *argv[]) {
 		fprintf(stderr, "Impossibile creare il socket\n");
 		exit(EXIT_FAILURE);
 	}
+
+	if (connect_to_server(&sa) < 0) {
+		exit(EXIT_FAILURE);
+	}
+
 	// per rendere la chiusura con ^C piu' gentile, faccio fare la quit
 	signal(SIGINT, quit);
 	// loop
@@ -109,16 +113,17 @@ int main(int argc, char *argv[]) {
 		char *arg;
 		if (read_command(userinput, &cmd, &arg) < 0) {
 			fprintf(stderr, "Troppi argomenti\n");
+			help();
 			continue;
 		}
 		// gestione comandi
-		if (strcmp(cmd, "help")) {
+		if (strcmp(cmd, "help") == 0) {
 			help();
-		} else if (strcmp(cmd, "quit")) {
+		} else if (strcmp(cmd, "quit") == 0) {
 			send_command("quit", NULL);
 			close(sd);	// quit del client
 			exit(EXIT_SUCCESS);
-		} else if (strcmp(cmd, "compress")) {
+		} else if (strcmp(cmd, "compress") == 0) {
 			// bisogna leggere arg, se non e' NULL allora lo cambio
 			if (arg == NULL) {
 				arg = "z";
@@ -137,7 +142,7 @@ int main(int argc, char *argv[]) {
 			// ora ho dove voglio creare il file da ricevere, quello compresso
 			receive_file(path);
 			free(path);
-		} else if (strcmp(cmd, "add")) {
+		} else if (strcmp(cmd, "add") == 0) {
 			if (arg == NULL) {
 				fprintf(stderr, "Campo [file] mancante\n");
 				continue;
@@ -152,7 +157,7 @@ int main(int argc, char *argv[]) {
 				filename = foff + 1;
 			}
 			int invalid_name = 0;
-			for (int i = 0; i < strlen(filename); i++) {
+			for (size_t i = 0; i < strlen(filename); i++) {
 				if (!isascii(filename[i]) && !isalpha(filename[i]) &&
 					!isdigit(filename[i]) && filename[i] != '.') {
 					invalid_name = 1;
@@ -170,6 +175,9 @@ int main(int argc, char *argv[]) {
 				fprintf(stderr, "Errore nel trasferimento del file %s\n", filename);
 				return -1;
 			}
+		} else {
+			printf("Comnado non riconosciuto\n");
+			help();
 		}
 	}
 

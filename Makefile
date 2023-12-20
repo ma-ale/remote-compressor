@@ -2,9 +2,9 @@ CFLAGS = -g -std=c99 -Wall -Wextra -pedantic
 
 # regole di progetto
 
-esercizio: server/server_esercizio client/client_esercizio
-
 rcomp: client/rcomp_client server/rcomp_server
+
+esercizio: server/server_esercizio client/client_esercizio
 
 # regole file sorgente
 

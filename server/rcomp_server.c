@@ -54,14 +54,14 @@ int process_client(void) {
 			continue;
 		}
 
-		if (strcmp(cmd, "quit")) {
+		if (strcmp(cmd, "quit") == 0) {
 			send_response(ok);
 			// rimuovi la cartella
 			char command[sizeof("rm -rf ") + sizeof(myfolder)];
 			snprintf(command, sizeof(command), "rm -rf %s", myfolder);
 			system(command);
 			break;
-		} else if (strcmp(cmd, "add")) {
+		} else if (strcmp(cmd, "add") == 0) {
 			// controllo di avere il nome del file
 			char *filename = arg;
 			if (filename == NULL) {
@@ -89,7 +89,7 @@ int process_client(void) {
 				goto free_args;
 			}
 
-		} else if (strcmp(cmd, "compress")) {
+		} else if (strcmp(cmd, "compress") == 0) {
 			// controllo di avere il nome del file
 			char *alg = arg;
 			if (alg == NULL) {
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 	int				   listen_sd;
 	struct sockaddr_in sa;
 	if (socket_stream(addr_str, port_no, &listen_sd, &sa) < 0) {
-		printf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
+		fprintf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	// --- BINDING --- //
@@ -222,7 +222,7 @@ int main(int argc, char *argv[]) {
 					stderr, "Impossibile creare un processo figlio: %s\n", strerror(errno)
 				);
 			}
-			printf("Il processo %d ha terminato", pid);
+			printf("Il processo %d ha terminato\n", pid);
 			/* qua il padre pulisce per il figlio la directory e il file */
 		}
 	}
