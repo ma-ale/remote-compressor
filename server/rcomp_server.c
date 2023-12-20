@@ -21,10 +21,10 @@ int		  sd = -1;
 
 void quit() {
 	if (close(sd) < 0) {
-		fprintf(stderr, "Impossibile chiudere il socket: %s\n", strerror(errno));
+		fprintf(stderr, RED("\tImpossibile chiudere il socket: %s\n", strerror(errno)));
 		exit(EXIT_FAILURE);
 	}
-	printf("Chiusura del socket avvenuta con successo\n");
+	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"));
 	exit(EXIT_SUCCESS);
 }
 
@@ -36,7 +36,7 @@ int compress_folder(const char *dirname, const char *archivename, char alg) {
 	snprintf(cmd, sizeof(cmd), "tar -c -%c -f %s %s", alg, archivename, dirname);
 
 	if (system(cmd) != 0) {
-		fprintf(stderr, "Impossibile fare la system() %s\n", strerror(errno));
+		fprintf(stderr, MAGENTA("\tImpossibile fare la system() %s\n", strerror(errno)));
 		return -1;
 	}
 	return 0;
@@ -52,7 +52,7 @@ int process_client(void) {
 
 	while (1) {
 		if (receive_command(&cmd, &arg) < 0) {
-			fprintf(stderr, "Impossibile ricevere il comando\n");
+			fprintf(stderr, MAGENTA("\tImpossibile ricevere il comando\n"));
 			continue;
 		}
 
@@ -67,7 +67,7 @@ int process_client(void) {
 			// controllo di avere il nome del file
 			char *filename = arg;
 			if (filename == NULL) {
-				fprintf(stderr, "Ricevuto il comando add senza file\n");
+				fprintf(stderr, MAGENTA("\tRicevuto il comando add senza file\n"));
 				goto free_args;
 			}
 
@@ -76,7 +76,7 @@ int process_client(void) {
 			if (e < 0 && errno != EEXIST) {
 				fprintf(
 					stderr,
-					"Impossibile creare la cartella di processo: %s\n",
+					MAGENTA("\tImpossibile creare la cartella di processo: %s\n"),
 					strerror(errno)
 				);
 				return -1;
@@ -87,7 +87,7 @@ int process_client(void) {
 			chdir("..");
 
 			if (e < 0) {
-				fprintf(stderr, "Impossibile ricevere il file %s\n", filename);
+				fprintf(stderr, MAGENTA("\tImpossibile ricevere il file %s\n"), filename);
 				goto free_args;
 			}
 
@@ -95,7 +95,7 @@ int process_client(void) {
 			// controllo di avere il nome del file
 			char *alg = arg;
 			if (alg == NULL) {
-				fprintf(stderr, "Ricevuto il comando compress senza algoritmo\n");
+				fprintf(stderr, MAGENTA("\tRicevuto il comando compress senza algoritmo\n"));
 				goto free_args;
 			}
 
@@ -103,7 +103,7 @@ int process_client(void) {
 			int	  e = 0;
 
 			if (alg[0] != 'z' && alg[0] != 'j') {
-				fprintf(stderr, "Algoritmo non conosciuto\n");
+				fprintf(stderr, MAGENTA("\tAlgoritmo non conosciuto\n"));
 				goto free_args;
 			}
 
@@ -111,13 +111,13 @@ int process_client(void) {
 			e = compress_folder(myfolder, archivename, alg[0]);
 
 			if (e < 0) {
-				fprintf(stderr, "Impossibile comprimere %s\n", myfolder);
+				fprintf(stderr, MAGENTA("\tImpossibile comprimere %s\n"), myfolder);
 				goto free_args;
 			}
 
 			e = send_file(archivename);
 			if (e < 0) {
-				fprintf(stderr, "Impossibile inviare l'archivio %s\n", archivename);
+				fprintf(stderr, MAGENTA("\tImpossibile inviare l'archivio %s\n"), archivename);
 			}
 			free(archivename);
 		}
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 	int				   listen_sd;
 	struct sockaddr_in sa;
 	if (socket_stream(addr_str, port_no, &listen_sd, &sa) < 0) {
-		fprintf(stderr, "Impossibile creare il socket: %s\n", strerror(errno));
+		fprintf(stderr, RED("\tImpossibile creare il socket: %s\n"), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	// --- BINDING --- //
@@ -160,18 +160,20 @@ int main(int argc, char *argv[]) {
 	// associazione indirizzo a socket
 	if (bind(listen_sd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
 		fprintf(
-			stderr, "Impossibile associare l'indirizzo a un socket: %s\n", strerror(errno)
-		);
+			stderr, RED("\tImpossibile associare l'indirizzo a un socket: %s\n"),
+			strerror(errno)
+          );
 		exit(EXIT_FAILURE);
 	}
 
-	printf("Socket %d associato a %s:%d\n", listen_sd, addr_str, port_no);
+	printf(YELLOW("\tSocket %d associato a %s:%d\n"), listen_sd, addr_str, port_no);
 
 	// --- LISTENING --- //
 	if (listen(listen_sd, 10) < 0) {
 		fprintf(
-			stderr, "Impossibile mettersi in attesa su socket: %s\n", strerror(errno)
-		);
+			stderr, RED("\tImpossibile mettersi in attesa su socket: %s\n"),
+          strerror(errno)
+          );
 		exit(EXIT_FAILURE);
 	}
 
@@ -187,7 +189,7 @@ int main(int argc, char *argv[]) {
 		if (sd < 0) {
 			fprintf(
 				stderr,
-				"Impossibile accettare connessione su socket: %s\n",
+				MAGENTA("\tImpossibile accettare connessione su socket: %s\n"),
 				strerror(errno)
 			);
 			continue;
@@ -198,15 +200,18 @@ int main(int argc, char *argv[]) {
 			AF_INET, &client_addr.sin_addr.s_addr, client_addr_str, INET_ADDRSTRLEN
 		);
 		if (res == NULL) {
-			fprintf(stderr, "Impossibile convertire l'indirizzo: %s\n", strerror(errno));
+            fprintf(stderr, MAGENTA("\tImpossibile convertire l'indirizzo: %s\n"),
+            strerror(errno)
+            );
 		} else {
-			printf("Connesso col client %s:%d\n", addr_str, ntohs(client_addr.sin_port));
+			printf(YELLOW("\tConnesso col client %s:%d\n"), addr_str, ntohs(client_addr.sin_port));
 		}
 
 		pid_t pid;
 		if ((pid = fork()) < 0) {
 			fprintf(
-				stderr, "Impossibile creare un processo figlio: %s\n", strerror(errno)
+				stderr, MAGENTA("\tImpossibile creare un processo figlio: %s\n"),
+                strerror(errno)
 			);
 			close(sd);
 			close(listen_sd);
@@ -214,7 +219,7 @@ int main(int argc, char *argv[]) {
 		} else if (pid == 0) {
 			// processo figlio
 			if (process_client() < 0) {
-				fprintf(stderr, "Processo figlio uscito con errore\n");
+				fprintf(stderr, RED("\tProcesso figlio uscito con errore\n"));
 				exit(EXIT_FAILURE);
 			}
 			exit(EXIT_SUCCESS);
@@ -222,10 +227,11 @@ int main(int argc, char *argv[]) {
 			// processo genitore
 			if (wait(NULL) < 0) {
 				fprintf(
-					stderr, "Impossibile creare un processo figlio: %s\n", strerror(errno)
+					stderr, RED("\tImpossibile creare un processo figlio: %s\n"),
+                    strerror(errno)
 				);
 			}
-			printf("Il processo %d ha terminato\n", pid);
+			printf(YELLOW("\tIl processo %d ha terminato\n"), pid);
 			// TODO: qua il padre pulisce per il figlio la directory e il file
 		}
 	}

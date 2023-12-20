@@ -3,6 +3,22 @@
 
 #include <sys/types.h>
 
+// colori
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
+#define RED(str) ANSI_COLOR_RED str ANSI_COLOR_RESET
+#define GREEN(str) ANSI_COLOR_GREEN str ANSI_COLOR_RESET
+#define YELLOW(str) ANSI_COLOR_YELLOW str ANSI_COLOR_RESET
+#define BLUE(str) ANSI_COLOR_BLUE str ANSI_COLOR_RESET
+#define MAGENTA(str) ANSI_COLOR_MAGENTA str ANSI_COLOR_RESET
+#define CYAN(str) ANSI_COLOR_CYAN str ANSI_COLOR_RESET
+
 // ritorna la dimensione in byte del file specificato da path oppure -1 in caso di errore
 // errore si ha nei seguenti casi:
 //     1. Il file non è un file regolare
