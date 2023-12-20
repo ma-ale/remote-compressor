@@ -21,7 +21,12 @@ ssize_t file_dimension(const char *path) {
 	// recupero dei metadati del file
 	struct stat file_stat;
 	if (stat(path, &file_stat) < 0) {
-		fprintf(stderr, "Errore nella lettura delle informazioni del file %s\n", path);
+		fprintf(
+			stderr,
+			"Errore nella lettura delle informazioni del file '%s': %s\n",
+			path,
+			strerror(errno)
+		);
 		return -1;
 	}
 

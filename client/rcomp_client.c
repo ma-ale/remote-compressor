@@ -105,6 +105,16 @@ int main(int argc, char *argv[]) {
 			fprintf(stderr, "Impossibile accettare comando: %s\n", strerror(errno));
 			continue;
 		}
+		// rimuovi il newline dall'input
+		size_t uin_len = strlen(userinput);
+		if (uin_len == 0) {
+			fprintf(stderr, "Input utente di lunghezza zero\n");
+			continue;
+		}
+		if (userinput[uin_len - 1] == '\n') {
+			userinput[uin_len - 1] = '\0';
+		}
+
 		// dividi il comando in sotto stringhe divise da ' '
 		// "compress b" <- secondo argomento
 		//  ^^^^^^^^
