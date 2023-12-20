@@ -113,6 +113,9 @@ int send_file(const char *path) {
 	}
 	printf(YELLOW("\tInviati %ld bytes di lunghezza file\n"), sent_bytes);
 
+	// lo devo aprire come file binary altrimenti la conversione implicita a file di testo
+	// che avviene nei sistemi non-UNIX tronca il file a zero, in sostanza se facessi solo
+	// fopen(archivio, "r"); in windows archivio viene troncato >:(
 	FILE *file = fopen(path, "rb");
 
 	// manda il file byte per byte
