@@ -64,7 +64,9 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 	// conversione dell'indirizzo in formato numerico
 	in_addr_t address;
 	if (inet_pton(AF_INET, addr_str, (void *)&address) < 0) {
-		fprintf(stderr, MAGENTA("\tImpossibile convertire l'indirizzo: %s\n"), strerror(errno));
+		fprintf(
+			stderr, MAGENTA("\tImpossibile convertire l'indirizzo: %s\n"), strerror(errno)
+		);
 		return -1;
 	}
 	// preparazione della struttura contenente indirizzo IP e porta
@@ -150,7 +152,11 @@ int receive_file(const char *path) {
 	// --- RICEZIONE LUNGHEZZA FILE --- //
 	uint32_t msg_len = 0, file_dim = 0;
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
-		fprintf(stderr, MAGENTA("\tImpossibile ricevere dati su socket: %s\n"), strerror(errno));
+		fprintf(
+			stderr,
+			MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+			strerror(errno)
+		);
 		return -1;
 	}
 	file_dim = ntohl(msg_len);
@@ -169,7 +175,11 @@ int receive_file(const char *path) {
 	while (recv_tot < (ssize_t)file_dim) {
 		rcvd_bytes = recv(sd, buff, 1, 0);
 		if (rcvd_bytes < 0) {
-			fprintf(stderr, MAGENTA("\tImpossibile ricevere dati su socket: %s\n"), strerror(errno));
+			fprintf(
+				stderr,
+				MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+				strerror(errno)
+			);
 			// send_response(!OK);
 			fclose(file);
 			remove(path);
@@ -189,7 +199,7 @@ int receive_file(const char *path) {
 		fprintf(
 			stderr,
 			MAGENTA("\tRicezione del file fallita: ricevuti %ld byte in piu' "
-			" della dimensione del file\n"),
+					" della dimensione del file\n"),
 			(recv_tot - file_dim)
 		);
 		remove(path);
@@ -222,12 +232,16 @@ int receive_response() {
 	char	resp[3];
 	rcvd_bytes = recv(sd, resp, 2, 0);
 	if (rcvd_bytes < 0) {
-		fprintf(stderr, MAGENTA("\tImpossibile ricevere dati su socket: %s\n", strerror(errno)));
+		fprintf(
+			stderr,
+			MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+			strerror(errno)
+		);
 		return -1;
 	}
 	resp[rcvd_bytes] = '\0';
 	if (strcmp(resp, "OK") != 0) {
-		fprintf(stderr, MAGENTA("\tServer segnala il seguente errore: %s\n", resp));
+		fprintf(stderr, MAGENTA("\tServer segnala il seguente errore: %s\n"), resp);
 		return -1;
 	}
 	printf(YELLOW("\tRicevuto l'OK dal server\n"));
@@ -242,7 +256,9 @@ int send_command(const char *com, const char *arg) {
 	int		msg_len	   = htonl(com_len);
 	ssize_t sent_bytes = send(sd, &msg_len, sizeof(int), 0);
 	if (sent_bytes < 0) {
-		fprintf(stderr, MAGENTA("\tImpossibile inviare dati comando: %s\n"), strerror(errno));
+		fprintf(
+			stderr, MAGENTA("\tImpossibile inviare dati comando: %s\n"), strerror(errno)
+		);
 		return -1;
 	}
 	printf("Inviati %ld bytes di lunghezza comando\n", sent_bytes);
@@ -255,7 +271,11 @@ int send_command(const char *com, const char *arg) {
 		buff[0]	   = com[sent_tot];
 		sent_bytes = send(sd, buff, 1, 0);
 		if (sent_bytes < 0) {
-			fprintf(stderr, MAGENTA("\tImpossibile inviare dati comando: %s\n"), strerror(errno));
+			fprintf(
+				stderr,
+				MAGENTA("\tImpossibile inviare dati comando: %s\n"),
+				strerror(errno)
+			);
 			return -1;
 		}
 		sent_tot += sent_bytes;
@@ -265,7 +285,7 @@ int send_command(const char *com, const char *arg) {
 			fprintf(
 				stderr,
 				MAGENTA("\tInvio comando fallito: inviati %ld byte in piu' "
-				"della dimensione del comando\n"),
+						"della dimensione del comando\n"),
 				(sent_tot - com_len)
 			);
 			return -1;
@@ -277,7 +297,7 @@ int send_command(const char *com, const char *arg) {
 	if (receive_response() < 0) {
 		return -1;
 	}
-	printf(YELLOW("\tInviati %ld bytes di comando\n", sent_tot));
+	printf(YELLOW("\tInviati %ld bytes di comando\n"), sent_tot);
 
 	// --- INVIO LUNGHEZZA ARGOMENTO --- //
 	// se il secondo argomento è nullo allora manda solo la sua dimensione, ovvero 0
@@ -289,7 +309,11 @@ int send_command(const char *com, const char *arg) {
 		msg_len			= htonl(arg_len);
 		sent_bytes		= send(sd, &msg_len, sizeof(int), 0);
 		if (sent_bytes < 0) {
-			fprintf(stderr, MAGENTA("\tImpossibile inviare dati argomento: %s\n"), strerror(errno));
+			fprintf(
+				stderr,
+				MAGENTA("\tImpossibile inviare dati argomento: %s\n"),
+				strerror(errno)
+			);
 			return -1;
 		}
 		printf(YELLOW("\tInviati %ld bytes di lunghezza argomento\n"), sent_bytes);
@@ -302,7 +326,9 @@ int send_command(const char *com, const char *arg) {
 			sent_bytes = send(sd, buff, 1, 0);
 			if (sent_bytes < 0) {
 				fprintf(
-					stderr, MAGENTA("\tImpossibile inviare dati argomento: %s\n"), strerror(errno)
+					stderr,
+					MAGENTA("\tImpossibile inviare dati argomento: %s\n"),
+					strerror(errno)
 				);
 				return -1;
 			}
@@ -313,7 +339,7 @@ int send_command(const char *com, const char *arg) {
 				fprintf(
 					stderr,
 					MAGENTA("\tInvio argomento fallito: inviati %ld byte in piu' "
-					"della dimensione dell' argomento\n"),
+							"della dimensione dell' argomento\n"),
 					(sent_tot - arg_len)
 				);
 				return -1;
@@ -338,7 +364,11 @@ int receive_command(char **cmd, char **arg) {
 	// --- RICEZIONE LUNGHEZZA COMANDO --- //
 	int msg_len = 0, cmd_dim = 0;
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
-		fprintf(stderr, MAGENTA("\tImpossibile ricevere dati su socket: %s\n"), strerror(errno));
+		fprintf(
+			stderr,
+			MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+			strerror(errno)
+		);
 		return -1;
 	}
 	cmd_dim = ntohl(msg_len);
@@ -346,7 +376,9 @@ int receive_command(char **cmd, char **arg) {
 	// --- RICEZIONE TESTO COMANDO --- //
 	if ((command = malloc(cmd_dim + 1)) == NULL) {
 		fprintf(
-			stderr, MAGENTA("\tImpossibile allocare memoria per il comando: %s\n"), strerror(errno)
+			stderr,
+			MAGENTA("\tImpossibile allocare memoria per il comando: %s\n"),
+			strerror(errno)
 		);
 		return -1;
 	}
@@ -357,7 +389,11 @@ int receive_command(char **cmd, char **arg) {
 	char	buf[1];
 	while (recv_tot < (ssize_t)cmd_dim) {
 		if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
-			fprintf(stderr, MAGENTA("\tImpossibile ricevere dati su socket: %s\n"), strerror(errno));
+			fprintf(
+				stderr,
+				MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+				strerror(errno)
+			);
 			free(command);
 			return -1;
 		}
@@ -373,7 +409,11 @@ int receive_command(char **cmd, char **arg) {
 	int arg_dim = 0;
 	msg_len		= 0;
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
-		fprintf(stderr, MAGENTA("\tImpossibile ricevere dati su socket: %s\n"), strerror(errno));
+		fprintf(
+			stderr,
+			MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+			strerror(errno)
+		);
 		free(command);
 		return -1;
 	}
@@ -400,7 +440,9 @@ int receive_command(char **cmd, char **arg) {
 		while (recv_tot < (ssize_t)arg_dim) {
 			if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
 				fprintf(
-					stderr, MAGENTA("\tImpossibile ricevere dati su socket: %s\n"), strerror(errno)
+					stderr,
+					MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+					strerror(errno)
 				);
 				free(command);
 				free(argument);

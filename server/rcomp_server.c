@@ -21,7 +21,7 @@ int				 sd = -1;
 
 void quit() {
 	if (close(sd) < 0) {
-		fprintf(stderr, RED("\tImpossibile chiudere il socket: %s\n", strerror(errno)));
+		fprintf(stderr, RED("\tImpossibile chiudere il socket: %s\n"), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"));
@@ -101,7 +101,9 @@ int process_client(void) {
 			// controllo di avere il nome del file
 			char *alg = arg;
 			if (alg == NULL) {
-				fprintf(stderr, MAGENTA("\tRicevuto il comando compress senza algoritmo\n"));
+				fprintf(
+					stderr, MAGENTA("\tRicevuto il comando compress senza algoritmo\n")
+				);
 				goto free_args;
 			}
 
@@ -125,7 +127,9 @@ int process_client(void) {
 
 			e = send_file(archivename);
 			if (e < 0) {
-				fprintf(stderr, MAGENTA("\tImpossibile inviare l'archivio %s\n"), archivename);
+				fprintf(
+					stderr, MAGENTA("\tImpossibile inviare l'archivio %s\n"), archivename
+				);
 			}
 			free(archivename);
 		}
@@ -168,9 +172,10 @@ int main(int argc, char *argv[]) {
 	// associazione indirizzo a socket
 	if (bind(listen_sd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
 		fprintf(
-			stderr, RED("\tImpossibile associare l'indirizzo a un socket: %s\n"),
+			stderr,
+			RED("\tImpossibile associare l'indirizzo a un socket: %s\n"),
 			strerror(errno)
-          );
+		);
 		exit(EXIT_FAILURE);
 	}
 
@@ -179,9 +184,10 @@ int main(int argc, char *argv[]) {
 	// --- LISTENING --- //
 	if (listen(listen_sd, 10) < 0) {
 		fprintf(
-			stderr, RED("\tImpossibile mettersi in attesa su socket: %s\n"),
-          strerror(errno)
-          );
+			stderr,
+			RED("\tImpossibile mettersi in attesa su socket: %s\n"),
+			strerror(errno)
+		);
 		exit(EXIT_FAILURE);
 	}
 
@@ -208,18 +214,25 @@ int main(int argc, char *argv[]) {
 			AF_INET, &client_addr.sin_addr.s_addr, client_addr_str, INET_ADDRSTRLEN
 		);
 		if (res == NULL) {
-            fprintf(stderr, MAGENTA("\tImpossibile convertire l'indirizzo: %s\n"),
-            strerror(errno)
-            );
+			fprintf(
+				stderr,
+				MAGENTA("\tImpossibile convertire l'indirizzo: %s\n"),
+				strerror(errno)
+			);
 		} else {
-			printf(YELLOW("\tConnesso col client %s:%d\n"), addr_str, ntohs(client_addr.sin_port));
+			printf(
+				YELLOW("\tConnesso col client %s:%d\n"),
+				addr_str,
+				ntohs(client_addr.sin_port)
+			);
 		}
 
 		pid_t pid;
 		if ((pid = fork()) < 0) {
 			fprintf(
-				stderr, MAGENTA("\tImpossibile creare un processo figlio: %s\n"),
-                strerror(errno)
+				stderr,
+				MAGENTA("\tImpossibile creare un processo figlio: %s\n"),
+				strerror(errno)
 			);
 			close(sd);
 			close(listen_sd);
@@ -235,8 +248,9 @@ int main(int argc, char *argv[]) {
 			// processo genitore
 			if (wait(NULL) < 0) {
 				fprintf(
-					stderr, RED("\tImpossibile creare un processo figlio: %s\n"),
-                    strerror(errno)
+					stderr,
+					RED("\tImpossibile creare un processo figlio: %s\n"),
+					strerror(errno)
 				);
 			}
 			printf(YELLOW("\tIl processo %d ha terminato\n"), pid);

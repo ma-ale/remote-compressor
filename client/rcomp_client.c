@@ -97,14 +97,16 @@ int main(int argc, char *argv[]) {
 	// per rendere la chiusura con ^C piu' gentile, faccio fare la quit
 	signal(SIGINT, quit);
 	// contatore della add
-    int n_add = 0;
+	int n_add = 0;
 	// loop
 	while (1) {
 		const unsigned int CMD_MAX = 1024;
 		char			   userinput[CMD_MAX];
 		printf("rcomp> ");
 		if (fgets(userinput, sizeof(userinput) - 1, stdin) == NULL) {
-			fprintf(stderr, MAGENTA("\tImpossibile accettare comando: %s\n"), strerror(errno));
+			fprintf(
+				stderr, MAGENTA("\tImpossibile accettare comando: %s\n"), strerror(errno)
+			);
 			continue;
 		}
 		// rimuovi il newline dall'input
@@ -136,11 +138,14 @@ int main(int argc, char *argv[]) {
 			close(sd);	// quit del client
 			exit(EXIT_SUCCESS);
 		} else if (strcmp(cmd, "compress") == 0) {
-		    if (n_add < 1){
-                fprintf(stderr, MAGENTA("\tERRORE: aggiungere almeno un file"
-                         "prima di effettuare la compressione\n"));
+			if (n_add < 1) {
+				fprintf(
+					stderr,
+					MAGENTA("\tERRORE: aggiungere almeno un file"
+							"prima di effettuare la compressione\n")
+				);
 				continue;
-		    }
+			}
 			// bisogna leggere arg, se non e' NULL allora lo cambio
 			if (arg == NULL) {
 				arg = "z";
@@ -189,13 +194,15 @@ int main(int argc, char *argv[]) {
 			}
 
 			if (invalid_name) {
-				fprintf(stderr, MAGENTA("\tNome file '%s' non valido\n", filename));
+				fprintf(stderr, MAGENTA("\tNome file '%s' non valido\n"), filename);
 				continue;
 			}
 
 			send_command("add", filename);
 			if (send_file(arg) < 0) {
-				fprintf(stderr, MAGENTA("\tErrore nel trasferimento del file %s\n", filename));
+				fprintf(
+					stderr, MAGENTA("\tErrore nel trasferimento del file %s\n"), filename
+				);
 				return -1;
 			}
 			n_add++;
