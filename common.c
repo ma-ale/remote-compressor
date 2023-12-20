@@ -86,6 +86,8 @@ int send_file(const char *path) {
 
 		uint32_t msg_len = UINT32_MAX;
 		send(sd, &msg_len, sizeof(uint32_t), 0);
+		fprintf(stderr, MAGENTA("\tInviato 0xffffffff come dimensione file\n"));
+
 		return -1;
 	}
 
@@ -98,6 +100,7 @@ int send_file(const char *path) {
 		);
 		uint32_t msg_len = UINT32_MAX;
 		send(sd, &msg_len, sizeof(uint32_t), 0);
+		fprintf(stderr, MAGENTA("\tInviato 0xffffffff come dimensione file\n"));
 		return -1;
 	}
 
@@ -108,6 +111,7 @@ int send_file(const char *path) {
 		fprintf(stderr, MAGENTA("\tImpossibile inviare dati: %s\n"), strerror(errno));
 		return -1;
 	}
+	printf(YELLOW("\tInviati %ld bytes di lunghezza file\n"), sent_bytes);
 
 	FILE *file = fopen(path, "r");
 
@@ -261,7 +265,7 @@ int send_command(const char *com, const char *arg) {
 		);
 		return -1;
 	}
-	printf("Inviati %ld bytes di lunghezza comando\n", sent_bytes);
+	printf(YELLOW("\tInviati %ld bytes di lunghezza comando\n"), sent_bytes);
 
 	// --- INVIO TESTO COMANDO --- //
 	// manda il comando byte per byte
