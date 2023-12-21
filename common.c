@@ -219,11 +219,11 @@ int receive_file(const char *path) {
 	}
 
 	// --- RICEZIONE FILE --- //
-	char	buff[1];
+	char	buff[CHUNK_SIZE];
 	ssize_t rcvd_bytes = 0;
 	ssize_t recv_tot   = 0;
 	while (recv_tot < (ssize_t)file_dim) {
-		rcvd_bytes = recv(sd, buff, 1, 0);
+		rcvd_bytes = recv(sd, buff, CHUNK_SIZE, 0);
 		if (rcvd_bytes < 0) {
 			fprintf(
 				stderr,
