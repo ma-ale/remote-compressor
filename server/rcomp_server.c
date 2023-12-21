@@ -199,13 +199,15 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	// --- ATTESA DI CONNESSIONE --- //
-	printf("\tIn attesa di connessione sulla porta %d\n", port_no);
+
+
 
 	struct sockaddr_in client_addr;
 	char			   client_addr_str[INET_ADDRSTRLEN];
 
 	while (1) {
+	    // --- ATTESA DI CONNESSIONE --- //
+        printf("\tIn attesa di connessione sulla porta %d\n", port_no);
 		socklen_t client_addr_len = sizeof(client_addr);
 		sd = accept(listen_sd, (struct sockaddr *)&client_addr, &client_addr_len);
 		if (sd < 0) {
