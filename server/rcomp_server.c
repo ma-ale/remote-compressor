@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
 			// processo genitore
 			snprintf(childfolder, sizeof(childfolder), "folder-%d", pid);
 			printf(
-				YELLOW("Creato processo figlio pid: %d, childfolder: '%s'\n"),
+				YELLOW("\tCreato processo figlio pid: %d, childfolder: '%s'\n"),
 				pid,
 				childfolder
 			);
@@ -280,7 +280,7 @@ int main(int argc, char *argv[]) {
 			char rm_command[sizeof("rm -rf ") + sizeof(childfolder) + 1];
 			snprintf(rm_command, sizeof(rm_command), "rm -rf %s", childfolder);
 			if (system(rm_command)) {
-				fprintf(stderr, RED("Impossibile eliminare la cartella del figlio\n"));
+				fprintf(stderr, RED("\tERRORE: Impossibile eliminare la cartella del figlio\n"));
 			}
 		}
 	}
