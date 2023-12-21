@@ -198,10 +198,6 @@ int main(int argc, char *argv[]) {
 		);
 		exit(EXIT_FAILURE);
 	}
-
-
-
-
 	struct sockaddr_in client_addr;
 	char			   client_addr_str[INET_ADDRSTRLEN];
 
@@ -282,7 +278,10 @@ int main(int argc, char *argv[]) {
 			char rm_command[sizeof("rm -rf ") + sizeof(childfolder) + 1];
 			snprintf(rm_command, sizeof(rm_command), "rm -rf %s", childfolder);
 			if (system(rm_command)) {
-				fprintf(stderr, RED("\tERRORE: Impossibile eliminare la cartella del figlio\n"));
+				fprintf(
+					stderr,
+					RED("\tERRORE: Impossibile eliminare la cartella del figlio\n")
+				);
 			}
 		}
 	}

@@ -165,7 +165,10 @@ int main(int argc, char *argv[]) {
 				continue;
 			}
 
-			send_command("compress", arg);
+			if (send_command("compress", arg) < 0) {
+				fprintf(stderr, MAGENTA("\tERRORE: Impossibile mandare il comando\n"));
+				continue;
+			}
 
 			if (receive_response() < 0) {
 				fprintf(
@@ -226,7 +229,10 @@ int main(int argc, char *argv[]) {
 				fclose(exists);
 			}
 
-			send_command("add", filename);
+			if (send_command("add", filename) < 0) {
+				fprintf(stderr, MAGENTA("\tERRORE: Impossibile mandare il comando\n"));
+				continue;
+			}
 
 			if (send_file(arg) < 0) {
 				fprintf(
