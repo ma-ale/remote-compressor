@@ -337,39 +337,22 @@ int send_command(const char *com, const char *arg) {
 
 	// --- INVIO TESTO COMANDO --- //
 	// manda il comando byte per byte
-	ssize_t sent_tot = 0;
-	char	buff[1];
-	while (1) {
-		buff[0]	   = com[sent_tot];
-		sent_bytes = send(sd, buff, 1, 0);
-		if (sent_bytes < 0) {
-			fprintf(
-				stderr,
-				MAGENTA("\tERRORE: Impossibile inviare dati comando: %s\n"),
-				strerror(errno)
-			);
-			return -1;
-		}
-		sent_tot += sent_bytes;
-		if (sent_tot == com_len) {
-			break;
-		} else if (sent_tot > com_len) {  // ROBA IN PIU'!!!
-			fprintf(
-				stderr,
-				MAGENTA("\tERRORE: Invio comando fallito: inviati %ld byte in piu' "
-						"della dimensione del comando\n"),
-				(sent_tot - com_len)
-			);
-			return -1;
-		}
-	}
 
+	sent_bytes = send(sd, com, com_len, 0);
+	if (sent_bytes < 0) {
+		fprintf(
+			stderr,
+			MAGENTA("\tERRORE: Impossibile inviare dati comando: %s\n"),
+			strerror(errno)
+		);
+		return -1;
+	}
 	// ascolta la risposta del server
 	printf(YELLOW("\tVerifica risposta dal server...\n"));
 	if (receive_response() < 0) {
 		return -1;
 	}
-	printf(YELLOW("\tInviati %ld bytes di comando\n"), sent_tot);
+	printf(YELLOW("\tInviati %ld bytes di comando\n"), sent_bytes);
 
 	// --- INVIO LUNGHEZZA ARGOMENTO --- //
 	// se il secondo argomento è nullo allora manda solo la sua dimensione, ovvero 0
@@ -391,31 +374,15 @@ int send_command(const char *com, const char *arg) {
 		printf(YELLOW("\tInviati %ld bytes di lunghezza argomento\n"), sent_bytes);
 
 		// --- INVIO TESTO ARGOMENTO --- //
-		// manda l'argomento byte per byte
-		sent_tot = 0;
-		while (1) {
-			buff[0]	   = arg[sent_tot];
-			sent_bytes = send(sd, buff, 1, 0);
-			if (sent_bytes < 0) {
-				fprintf(
-					stderr,
-					MAGENTA("\tERRORE: Impossibile inviare dati argomento: %s\n"),
-					strerror(errno)
-				);
-				return -1;
-			}
-			sent_tot += sent_bytes;
-			if (sent_tot == arg_len) {
-				break;
-			} else if (sent_tot > arg_len) {  // ROBA IN PIU'!!!
-				fprintf(
-					stderr,
-					MAGENTA("\tERRORE: Invio argomento fallito: inviati %ld byte in piu' "
-							"della dimensione dell' argomento\n"),
-					(sent_tot - arg_len)
-				);
-				return -1;
-			}
+		// manda l'argomento
+		sent_bytes = send(sd, arg, arg_len, 0);
+		if (sent_bytes < 0) {
+			fprintf(
+				stderr,
+				MAGENTA("\tERRORE: Impossibile inviare dati argomento: %s\n"),
+				strerror(errno)
+			);
+			return -1;
 		}
 	}
 
@@ -425,7 +392,7 @@ int send_command(const char *com, const char *arg) {
 		return -1;
 	}
 
-	printf(YELLOW("\tInviati %ld bytes di argomento\n"), sent_tot);
+	printf(YELLOW("\tInviati %ld bytes di argomento\n"), sent_bytes);
 
 	return 0;
 }
