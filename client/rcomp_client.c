@@ -168,6 +168,9 @@ int main(int argc, char *argv[]) {
 
 			if (send_command("compress", arg) < 0) {
 				fprintf(stderr, MAGENTA("\tERRORE: Impossibile mandare il comando\n"));
+				if (is_network_error(errno)) {
+					quit();
+				}
 				continue;
 			}
 
@@ -176,6 +179,9 @@ int main(int argc, char *argv[]) {
 					stderr,
 					MAGENTA("\tERRORE: Il server ha fallito nel comprimere i file\n")
 				);
+				if (is_network_error(errno)) {
+					quit();
+				}
 				continue;
 			}
 
@@ -183,7 +189,12 @@ int main(int argc, char *argv[]) {
 			// mette l'estensione al nome del file a seconda dell'algoritmo
 			get_filename(arg[0], &path);
 			// ora ho dove voglio creare il file da ricevere, quello compresso
-			receive_file(path);
+			if (receive_file(path) < 0) {
+				fprintf(stderr, MAGENTA("\tERRORE: Ricezione del file fallita\n"));
+				if (is_network_error(errno)) {
+					quit();
+				}
+			}
 			free(path);
 			n_add = 0;
 		} else if (strcmp(cmd, "add") == 0) {
@@ -232,6 +243,9 @@ int main(int argc, char *argv[]) {
 
 			if (send_command("add", filename) < 0) {
 				fprintf(stderr, MAGENTA("\tERRORE: Impossibile mandare il comando\n"));
+				if (is_network_error(errno)) {
+					quit();
+				}
 				continue;
 			}
 
@@ -241,6 +255,9 @@ int main(int argc, char *argv[]) {
 					MAGENTA("\tERRORE: Errore nel trasferimento del file %s\n"),
 					filename
 				);
+				if (is_network_error(errno)) {
+					quit();
+				}
 				continue;
 			}
 			n_add++;

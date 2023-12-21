@@ -52,11 +52,13 @@ int process_client(const char *myfolder) {
 
 	while (1) {
 		if (receive_command(&cmd, &arg) < 0) {
-			// su windows SIGPIPE e EPIPE non sono supportati causando un ciclo infinito
-			fprintf(stderr, MAGENTA("\tERRORE: Impossibile ricevere il comando\n"));
-			if (errno == ECONNABORTED || errno == ECONNREFUSED) {
-				close(sd);
-				return -1;
+			fprintf(
+				stderr,
+				MAGENTA("\tERRORE: Impossibile ricevere il comando: %s\n"),
+				strerror(errno)
+			);
+			if (is_network_error(errno)) {
+				quit();
 			}
 			continue;
 		}
@@ -97,6 +99,9 @@ int process_client(const char *myfolder) {
 					MAGENTA("\tERRORE: Impossibile ricevere il file %s\n"),
 					filename
 				);
+				if (is_network_error(errno)) {
+					quit();
+				}
 				goto free_args;
 			}
 
@@ -126,10 +131,14 @@ int process_client(const char *myfolder) {
 				fprintf(
 					stderr, MAGENTA("\tERRORE: Impossibile comprimere %s\n"), myfolder
 				);
-				send_response(!OK);
+				if (send_response(!OK) < 0) {
+					return -1;
+				}
 				goto free_args;
 			}
-			send_response(OK);
+			if (send_response(OK) < 0) {
+				return -1;
+			}
 
 			e = send_file(archivename);
 			if (e < 0) {
@@ -138,6 +147,9 @@ int process_client(const char *myfolder) {
 					MAGENTA("\tERRORE: Impossibile inviare l'archivio %s\n"),
 					archivename
 				);
+				if (is_network_error(errno)) {
+					quit();
+				}
 			}
 			free(archivename);
 		}

@@ -17,6 +17,18 @@ extern int sd;
 
 const int OK = 1;
 
+int is_network_error(int err) {
+	switch (err) {
+	case EPIPE:			// se il peer ha chiuso la connessione
+	case ECONNABORTED:	// se la connessione è stata interrotta
+	case ECONNREFUSED:
+	case EBADF:	 // se il socket è già stato chiuso
+		return 1;
+	default:
+		return 0;
+	}
+}
+
 ssize_t file_dimension(const char *path) {
 	// recupero dei metadati del file
 	struct stat file_stat;
@@ -237,12 +249,16 @@ int receive_file(const char *path) {
 			(recv_tot - file_dim)
 		);
 		remove(path);
-		send_response(!OK);
+		if (send_response(!OK) < 0) {
+			return -1;
+		}
 		return -1;
 	}
 
 	printf("\tFile %s " YELLOW("di %ld byte") " ricevuto\n", path, recv_tot);
-	send_response(OK);
+	if (send_response(OK) < 0) {
+		return -1;
+	}
 	return 0;
 }
 
@@ -445,7 +461,9 @@ int receive_command(char **cmd, char **arg) {
 	*cmd = command;
 
 	// comando ricevuto, manda riscontro al peer
-	send_response(OK);
+	if (send_response(OK) < 0) {
+		return -1;
+	}
 
 	// --- RICEZIONE LUNGHEZZA ARGOMENTO --- //
 	int arg_dim = 0;
@@ -496,7 +514,9 @@ int receive_command(char **cmd, char **arg) {
 		*arg = argument;
 	}
 	// argomento ricevuto, manda riscontro al peer
-	send_response(OK);
+	if (send_response(OK) < 0) {
+		return -1;
+	}
 	printf(("\tRicezione comando %s \n"), command);
 
 	return 0;

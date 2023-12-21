@@ -4,28 +4,33 @@
 #include <sys/types.h>
 
 // colori
-#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_RED	   "\x1b[31m"
 #define ANSI_COLOR_GREEN   "\x1b[32m"
 #define ANSI_COLOR_YELLOW  "\x1b[33m"
-#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_BLUE	   "\x1b[34m"
 #define ANSI_COLOR_MAGENTA "\x1b[35m"
-#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_CYAN	   "\x1b[36m"
 #define ANSI_COLOR_RESET   "\x1b[0m"
 
-#define RED(str) ANSI_COLOR_RED str ANSI_COLOR_RESET
-#define GREEN(str) ANSI_COLOR_GREEN str ANSI_COLOR_RESET
-#define YELLOW(str) ANSI_COLOR_YELLOW str ANSI_COLOR_RESET
-#define BLUE(str) ANSI_COLOR_BLUE str ANSI_COLOR_RESET
+#define RED(str)	 ANSI_COLOR_RED str ANSI_COLOR_RESET
+#define GREEN(str)	 ANSI_COLOR_GREEN str ANSI_COLOR_RESET
+#define YELLOW(str)	 ANSI_COLOR_YELLOW str ANSI_COLOR_RESET
+#define BLUE(str)	 ANSI_COLOR_BLUE str ANSI_COLOR_RESET
 #define MAGENTA(str) ANSI_COLOR_MAGENTA str ANSI_COLOR_RESET
-#define CYAN(str) ANSI_COLOR_CYAN str ANSI_COLOR_RESET
+#define CYAN(str)	 ANSI_COLOR_CYAN str ANSI_COLOR_RESET
 
-// ritorna la dimensione in byte del file specificato da path oppure -1 in caso di errore
-// errore si ha nei seguenti casi:
+// controlla il valore di err (errno) e se l'errore indica un problema con il socket
+// allora ritorna 1, altrimenti 0
+int is_network_error(int err);
+
+// ritorna la dimensione in byte del file specificato da path oppure -1 in caso di
+// errore errore si ha nei seguenti casi:
 //     1. Il file non è un file regolare
 //     1. I motivi per cui stat() può fallire
 ssize_t file_dimension(const char *path);
 
-// genera il nome dell'archivio compresso da ricevere/trasmettere con l'estensione giusta
+// genera il nome dell'archivio compresso da ricevere/trasmettere con l'estensione
+// giusta
 int get_filename(char ext, char **file_name);
 
 // crea un socket di tipo AF_INET e SOCK_STREAM, assegna il descriptor alla variabile
