@@ -146,6 +146,10 @@ int send_file(const char *path) {
 
 	printf(YELLOW("\tInviati %ld/%ld bytes di file\n"), sent_tot, file_dim);
 
+	if (sent_tot == file_dim){
+        printf("\tFile %s inviato\n", path);
+	}
+
 	return 0;
 }
 
