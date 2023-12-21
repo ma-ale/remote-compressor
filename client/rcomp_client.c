@@ -75,6 +75,8 @@ void help(void) {
 }
 
 int main(int argc, char *argv[]) {
+	// system("clear");
+	printf("\n\n\n\n\n");
 	// leggi gli argomenti dal terminale e determina l'indirizzo del server
 	// e la porta
 	//		argv[1] = indirizzo
@@ -211,19 +213,32 @@ int main(int argc, char *argv[]) {
 				);
 				continue;
 			}
+			// controllo per evitare di fare la send su un file che non esiste
+			FILE *exists = fopen(arg, "rb");
+			if (exists == NULL) {
+				fprintf(
+					stderr,
+					MAGENTA("\tERRORE: impossibile aggiungere file (%s)\n"),
+					strerror(errno)
+				);
+				continue;
+			} else {
+				fclose(exists);
+			}
 
 			send_command("add", filename);
+
 			if (send_file(arg) < 0) {
 				fprintf(
 					stderr,
 					MAGENTA("\tERRORE: Errore nel trasferimento del file %s\n"),
 					filename
 				);
-				return -1;
+				continue;
 			}
 			n_add++;
 		} else {
-			printf(MAGENTA("\tERRORE: Comanado non riconosciuto\n"));
+			printf(MAGENTA("\tERRORE: Comando non riconosciuto\n"));
 			help();
 		}
 	}
