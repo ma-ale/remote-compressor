@@ -30,6 +30,11 @@ void quit() {
 	exit(EXIT_SUCCESS);
 }
 
+void quit_handler() {
+	send_command("quit", NULL);
+	quit();
+}
+
 int read_command(char *str, char **com, char **arg) {
 	char *command = NULL, *argument = NULL, *tmp;
 	int	  argc = 0;
@@ -100,7 +105,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	// per rendere la chiusura con ^C piu' gentile, faccio fare la quit
-	signal(SIGINT, quit);
+	signal(SIGINT, quit_handler);
 	// ignora la sigpipe
 	signal(SIGPIPE, SIG_IGN);
 

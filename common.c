@@ -23,6 +23,7 @@ int is_network_error(int err) {
 	case ECONNABORTED:	// se la connessione è stata interrotta
 	case ECONNREFUSED:
 	case EBADF:	 // se il socket è già stato chiuso
+		fprintf(stderr, RED("\tERRORE: Errore di connessione (%s)\n"), strerror(errno));
 		return 1;
 	default:
 		return 0;
