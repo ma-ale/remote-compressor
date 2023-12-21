@@ -31,7 +31,7 @@ void quit() {
 }
 
 void quit_handler() {
-	send_command("quit", NULL);
+	send_command(sd, "quit", NULL);
 	quit();
 }
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 		if (strcmp(cmd, "help") == 0) {
 			help();
 		} else if (strcmp(cmd, "quit") == 0) {
-			send_command("quit", NULL);
+			send_command(sd, "quit", NULL);
 			quit();
 			break;
 		} else if (strcmp(cmd, "compress") == 0) {
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
 				continue;
 			}
 
-			if (send_command("compress", arg) < 0) {
+			if (send_command(sd, "compress", arg) < 0) {
 				fprintf(stderr, MAGENTA("\tERRORE: Impossibile mandare il comando\n"));
 				if (is_network_error(errno)) {
 					quit();
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
 				continue;
 			}
 
-			if (receive_response() < 0) {
+			if (receive_response(sd) < 0) {
 				fprintf(
 					stderr,
 					MAGENTA("\tERRORE: Il server ha fallito nel comprimere i file\n")
@@ -194,7 +194,7 @@ int main(int argc, char *argv[]) {
 			// mette l'estensione al nome del file a seconda dell'algoritmo
 			get_filename(arg[0], &path);
 			// ora ho dove voglio creare il file da ricevere, quello compresso
-			if (receive_file(path) < 0) {
+			if (receive_file(sd, path) < 0) {
 				fprintf(stderr, MAGENTA("\tERRORE: Ricezione del file fallita\n"));
 				if (is_network_error(errno)) {
 					quit();
@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
 				fclose(exists);
 			}
 
-			if (send_command("add", filename) < 0) {
+			if (send_command(sd, "add", filename) < 0) {
 				fprintf(stderr, MAGENTA("\tERRORE: Impossibile mandare il comando\n"));
 				if (is_network_error(errno)) {
 					quit();
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
 				continue;
 			}
 
-			if (send_file(arg) < 0) {
+			if (send_file(sd, arg) < 0) {
 				fprintf(
 					stderr,
 					MAGENTA("\tERRORE: Errore nel trasferimento del file %s\n"),

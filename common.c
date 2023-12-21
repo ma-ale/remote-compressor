@@ -12,8 +12,7 @@
 
 #include "common.h"
 
-// il socket descriptor da usare
-extern int sd;
+// tolto extern int sd;
 
 const int OK = 1;
 
@@ -104,7 +103,7 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 	return 0;
 }
 
-int send_file(const char *path) {
+int send_file(int sd, const char *path) {
 	printf("\tInvio del file %s al server in corso...\n", path);
 	ssize_t file_dim = file_dimension(path);
 	if (file_dim < 0) {
@@ -186,7 +185,7 @@ int send_file(const char *path) {
 	return 0;
 }
 
-int receive_file(const char *path) {
+int receive_file(int sd, const char *path) {
 	// --- RICEZIONE LUNGHEZZA FILE --- //
 	uint32_t msg_len = 0, file_dim = 0;
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
@@ -263,7 +262,7 @@ int receive_file(const char *path) {
 	return 0;
 }
 
-int send_response(int ok) {
+int send_response(int sd, int ok) {
 	if (ok) {
 		if (send(sd, "OK", 2, 0) < 0) {
 			fprintf(
@@ -282,7 +281,7 @@ int send_response(int ok) {
 	return 0;
 }
 
-int receive_response() {
+int receive_response(int sd) {
 	ssize_t rcvd_bytes;
 	char	resp[3];
 	rcvd_bytes = recv(sd, resp, 2, 0);
@@ -306,7 +305,7 @@ int receive_response() {
 	return 0;
 }
 
-int send_command(const char *com, const char *arg) {
+int send_command(int sd, const char *com, const char *arg) {
 	// --- INVIO LUNGHEZZA COMANDO --- //
 	// conversione a formato network (da big endian a little endian)
 	ssize_t com_len	   = strlen(com);
@@ -417,7 +416,7 @@ int send_command(const char *com, const char *arg) {
 	return 0;
 }
 
-int receive_command(char **cmd, char **arg) {
+int receive_command(int sd, char **cmd, char **arg) {
 	char *command = NULL, *argument = NULL;
 
 	// --- RICEZIONE LUNGHEZZA COMANDO --- //

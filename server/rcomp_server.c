@@ -51,7 +51,7 @@ int process_client(const char *myfolder) {
 	char *cmd = NULL, *arg = NULL;
 
 	while (1) {
-		if (receive_command(&cmd, &arg) < 0) {
+		if (receive_command(sd, &cmd, &arg) < 0) {
 			fprintf(
 				stderr,
 				MAGENTA("\tERRORE: Impossibile ricevere il comando: %s\n"),
@@ -64,7 +64,7 @@ int process_client(const char *myfolder) {
 		}
 
 		if (strcmp(cmd, "quit") == 0) {
-			send_response(OK);
+			send_response(sd, OK);
 			quit();
 			printf("\tClient disconnesso\n");
 			break;
@@ -90,7 +90,7 @@ int process_client(const char *myfolder) {
 			}
 			// entra nella cartella
 			chdir(myfolder);
-			e = receive_file(filename);
+			e = receive_file(sd, filename);
 			chdir("..");
 
 			if (e < 0) {
@@ -131,16 +131,16 @@ int process_client(const char *myfolder) {
 				fprintf(
 					stderr, MAGENTA("\tERRORE: Impossibile comprimere %s\n"), myfolder
 				);
-				if (send_response(!OK) < 0) {
+				if (send_response(sd, !OK) < 0) {
 					return -1;
 				}
 				goto free_args;
 			}
-			if (send_response(OK) < 0) {
+			if (send_response(sd, OK) < 0) {
 				return -1;
 			}
 
-			e = send_file(archivename);
+			e = send_file(sd, archivename);
 			if (e < 0) {
 				fprintf(
 					stderr,
