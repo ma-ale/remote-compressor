@@ -52,11 +52,8 @@ int process_client(const char *myfolder) {
 		if (receive_command(&cmd, &arg) < 0) {
 			// su windows SIGPIPE e EPIPE non sono supportati causando un ciclo infinito
 			fprintf(stderr, MAGENTA("\tERRORE: Impossibile ricevere il comando\n"));
-			if (errno == ECONNABORTED || errno == ECONNREFUSED) {
-				close(sd);
-				return -1;
-			}
-			continue;
+			quit();
+			return -1;
 		}
 
 		if (strcmp(cmd, "quit") == 0) {
@@ -155,6 +152,8 @@ int process_client(const char *myfolder) {
 }
 
 int main(int argc, char *argv[]) {
+	// system("clear");
+	printf("\n\n\n\n\n");
 	// leggi gli argomenti dal terminale e determina l'indirizzo del server
 	// e la porta
 	//		argv[1] = porta
@@ -251,6 +250,7 @@ int main(int argc, char *argv[]) {
 		} else if (pid == 0) {
 			// processo figlio
 
+			signal(SIGINT, quit);
 			snprintf(childfolder, sizeof(childfolder), "folder-%d", getpid());
 			if (process_client(childfolder) < 0) {
 				fprintf(stderr, RED("\tERRORE: Processo figlio uscito con errore\n"));
