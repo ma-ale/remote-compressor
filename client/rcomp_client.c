@@ -70,7 +70,7 @@ void help(void) {
 		"\tadd [file]\n\t --> invia il file specificato al server remoto\n"
 		"\tcompress [alg]\n\t --> riceve dal server remoto "
 		"l'archivio compresso secondo l'algoritmo specificato\n"
-		"\tquit\n --> disconnessione\n\n"
+		"\tquit\n\t --> disconnessione\n\n"
 	);
 }
 
