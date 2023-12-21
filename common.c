@@ -267,9 +267,9 @@ int receive_response() {
 int send_command(const char *com, const char *arg) {
 	// --- INVIO LUNGHEZZA COMANDO --- //
 	// conversione a formato network (da big endian a little endian)
-	ssize_t com_len	   = strlen(com);
-	int		msg_len	   = htonl(com_len);
-	ssize_t sent_bytes = send(sd, &msg_len, sizeof(int), 0);
+	ssize_t	 com_len	= strlen(com);
+	uint32_t msg_len	= htonl(com_len);
+	ssize_t	 sent_bytes = send(sd, &msg_len, sizeof(uint32_t), 0);
 	if (sent_bytes < 0) {
 		fprintf(
 			stderr, MAGENTA("\tImpossibile inviare dati comando: %s\n"), strerror(errno)
@@ -277,7 +277,6 @@ int send_command(const char *com, const char *arg) {
 		return -1;
 	}
 	printf(YELLOW("\tInviati %ld bytes di lunghezza comando\n"), sent_bytes);
-
 	// --- INVIO TESTO COMANDO --- //
 	// manda il comando byte per byte
 	ssize_t sent_tot = 0;

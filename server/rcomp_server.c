@@ -20,13 +20,22 @@ static const int OK = 1;
 int				 sd = -1;
 
 void quit() {
+	if (shutdown(sd, SHUT_RDWR) < 0) {
+		fprintf(
+			stderr,
+			RED("ERRORE: Impossibile chiudere la connessione: %s\n"),
+			strerror(errno)
+		);
+	}
 	if (close(sd) < 0) {
 		fprintf(
 			stderr, RED("\tERRORE: Impossibile chiudere il socket: %s\n"), strerror(errno)
 		);
 		exit(EXIT_FAILURE);
 	}
-	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"));
+	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"
+	) "\tDisconnessione effettuata\n");
+	exit(EXIT_SUCCESS);
 }
 
 // attraverso la funzione "system()" comprime la cartella dei file del client
@@ -50,7 +59,6 @@ int process_client(const char *myfolder) {
 
 	while (1) {
 		if (receive_command(&cmd, &arg) < 0) {
-			// su windows SIGPIPE e EPIPE non sono supportati causando un ciclo infinito
 			fprintf(stderr, MAGENTA("\tERRORE: Impossibile ricevere il comando\n"));
 			quit();
 			return -1;

@@ -19,6 +19,13 @@
 int sd = -1;
 
 void quit() {
+	if (shutdown(sd, SHUT_RDWR) < 0) {
+		fprintf(
+			stderr,
+			RED("ERRORE: Impossibile chiudere la connessione: %s\n"),
+			strerror(errno)
+		);
+	}
 	if (close(sd) < 0) {
 		fprintf(
 			stderr, RED("\tERRORE: Impossibile chiudere il socket: %s\n"), strerror(errno)
