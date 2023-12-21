@@ -23,7 +23,9 @@ ssize_t file_dimension(const char *path) {
 	if (stat(path, &file_stat) < 0) {
 		fprintf(
 			stderr,
-			MAGENTA("\tErrore nella lettura delle informazioni del file '%s': %s\n"),
+			MAGENTA(
+				"\tERRORE: Errore nella lettura delle informazioni del file '%s': %s\n"
+			),
 			path,
 			strerror(errno)
 		);
@@ -35,7 +37,7 @@ ssize_t file_dimension(const char *path) {
 	if (S_ISREG(file_stat.st_mode) > 0) {
 		file_size = file_stat.st_size;
 	} else {
-		printf(MAGENTA("\tIl file non e' un file regolare\n"));
+		printf(MAGENTA("\tERRORE: Il file non e' un file regolare\n"));
 		return -1;
 	}
 	return file_size;
@@ -48,7 +50,12 @@ int get_filename(char ext, char **file_name) {
 	} else if (ext == 'j') {
 		strcat(base_name, ".bz2");
 	} else {
-		fprintf(stderr, MAGENTA("\tEstensione file non riconosciuta: %c\n"), ext);
+		fprintf(
+			stderr,
+			MAGENTA("\tERRORE: Estensione file non "
+					"riconosciuta: %c\n"),
+			ext
+		);
 		return -1;
 	}
 	*file_name = strdup(base_name);	 // linuk non fallisce mai di memoria ;)
@@ -58,7 +65,11 @@ int get_filename(char ext, char **file_name) {
 int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa) {
 	*sd = socket(AF_INET, SOCK_STREAM, 0);
 	if (*sd < 0) {
-		fprintf(stderr, MAGENTA("\tImpossibile creare il socket: %s\n"), strerror(errno));
+		fprintf(
+			stderr,
+			MAGENTA("\tERRORE: Impossibile creare il socket: %s\n"),
+			strerror(errno)
+		);
 		return -1;
 	}
 	// conversione dell'indirizzo in formato numerico
@@ -66,7 +77,7 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 	if (inet_pton(AF_INET, addr_str, (void *)&address) <= 0) {
 		fprintf(
 			stderr,
-			MAGENTA("\tImpossibile convertire l'indirizzo '%s': %s\n"),
+			MAGENTA("\tERRORE: Impossibile convertire l'indirizzo '%s': %s\n"),
 			addr_str,
 			strerror(errno)
 		);
@@ -90,7 +101,7 @@ int send_file(const char *path) {
 
 		uint32_t msg_len = UINT32_MAX;
 		send(sd, &msg_len, sizeof(uint32_t), 0);
-		fprintf(stderr, MAGENTA("\tInviato 0xffffffff come dimensione file\n"));
+		fprintf(stderr, MAGENTA("\tERRORE: Inviato 0xffffffff come dimensione file\n"));
 
 		return -1;
 	}
@@ -99,12 +110,12 @@ int send_file(const char *path) {
 	if (file_dim >= UINT32_MAX) {
 		fprintf(
 			stderr,
-			MAGENTA("\tIl file è troppo grande: %.2fGiB\n"),
+			MAGENTA("\tERRORE: Il file è troppo grande: %.2fGiB\n"),
 			(float)file_dim / (float)(1024 * 1024 * 1024)
 		);
 		uint32_t msg_len = UINT32_MAX;
 		send(sd, &msg_len, sizeof(uint32_t), 0);
-		fprintf(stderr, MAGENTA("\tInviato 0xffffffff come dimensione file\n"));
+		fprintf(stderr, MAGENTA("\tERRORE: Inviato 0xffffffff come dimensione file\n"));
 		return -1;
 	}
 
@@ -112,7 +123,9 @@ int send_file(const char *path) {
 
 	ssize_t sent_bytes = send(sd, &msg_len, sizeof(uint32_t), 0);
 	if (sent_bytes < 0) {
-		fprintf(stderr, MAGENTA("\tImpossibile inviare dati: %s\n"), strerror(errno));
+		fprintf(
+			stderr, MAGENTA("\tERRORE: Impossibile inviare dati: %s\n"), strerror(errno)
+		);
 		return -1;
 	}
 	printf(YELLOW("\tInviati %ld bytes di lunghezza file\n"), sent_bytes);
@@ -133,7 +146,11 @@ int send_file(const char *path) {
 		buff[0]	   = c;
 		sent_bytes = send(sd, buff, 1, 0);
 		if (sent_bytes < 0) {
-			fprintf(stderr, MAGENTA("\tImpossibile inviare dati: %s\n"), strerror(errno));
+			fprintf(
+				stderr,
+				MAGENTA("\tERRORE: Impossibile inviare dati: %s\n"),
+				strerror(errno)
+			);
 			return -1;
 		}
 		sent_tot += sent_bytes;
@@ -162,7 +179,7 @@ int receive_file(const char *path) {
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
 		fprintf(
 			stderr,
-			MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+			MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
 			strerror(errno)
 		);
 		return -1;
@@ -171,7 +188,7 @@ int receive_file(const char *path) {
 
 	// il client ci dice che ha riscontrato un errore
 	if (file_dim == UINT32_MAX) {
-		fprintf(stderr, MAGENTA("\tIl client ha cancellato l'invio del file\n"));
+		fprintf(stderr, MAGENTA("\tERRORE: Il client ha cancellato l'invio del file\n"));
 		return -1;
 	}
 	printf(YELLOW("\tRicevuti %d byte di lunghezza del file\n"), file_dim);
@@ -179,7 +196,9 @@ int receive_file(const char *path) {
 	// apri o crea il file specificato da path in scrittura, troncato a zero
 	FILE *file = fopen(path, "w+b");
 	if (file == NULL) {
-		fprintf(stderr, MAGENTA("\tImpossibile aprire il file: %s\n"), strerror(errno));
+		fprintf(
+			stderr, MAGENTA("\tERRORE: Impossibile aprire il file: %s\n"), strerror(errno)
+		);
 		return -1;
 	}
 
@@ -192,7 +211,7 @@ int receive_file(const char *path) {
 		if (rcvd_bytes < 0) {
 			fprintf(
 				stderr,
-				MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+				MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
 				strerror(errno)
 			);
 			// send_response(!OK);
@@ -201,7 +220,7 @@ int receive_file(const char *path) {
 			return -1;
 		}
 		if (fputc(buff[0], file) == EOF) {
-			fprintf(stderr, MAGENTA("\tErrore nella scrittura del file\n"));
+			fprintf(stderr, MAGENTA("\tERRORE: Errore nella scrittura del file\n"));
 			fclose(file);
 			remove(path);
 			return -1;
@@ -230,12 +249,16 @@ int receive_file(const char *path) {
 int send_response(int ok) {
 	if (ok) {
 		if (send(sd, "OK", 2, 0) < 0) {
-			fprintf(stderr, MAGENTA("\tImpossibile inviare risposta al client\n"));
+			fprintf(
+				stderr, MAGENTA("\tERRORE: Impossibile inviare risposta al client\n")
+			);
 			return -1;
 		}
 	} else {
 		if (send(sd, "UH", 2, 0) < 0) {
-			fprintf(stderr, MAGENTA("\tImpossibile inviare risposta al client\n"));
+			fprintf(
+				stderr, MAGENTA("\tERRORE: Impossibile inviare risposta al client\n")
+			);
 			return -1;
 		}
 	}
@@ -249,14 +272,16 @@ int receive_response() {
 	if (rcvd_bytes < 0) {
 		fprintf(
 			stderr,
-			MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+			MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
 			strerror(errno)
 		);
 		return -1;
 	}
 	resp[rcvd_bytes] = '\0';
 	if (strcmp(resp, "OK") != 0) {
-		fprintf(stderr, MAGENTA("\tServer segnala il seguente errore: %s\n"), resp);
+		fprintf(
+			stderr, MAGENTA("\tERRORE: Server segnala il seguente errore: %s\n"), resp
+		);
 		return -1;
 	}
 	printf(YELLOW("\tRicevuto l'OK dal server\n"));
@@ -272,7 +297,9 @@ int send_command(const char *com, const char *arg) {
 	ssize_t sent_bytes = send(sd, &msg_len, sizeof(int), 0);
 	if (sent_bytes < 0) {
 		fprintf(
-			stderr, MAGENTA("\tImpossibile inviare dati comando: %s\n"), strerror(errno)
+			stderr,
+			MAGENTA("\tERRORE: Impossibile inviare dati comando: %s\n"),
+			strerror(errno)
 		);
 		return -1;
 	}
@@ -288,7 +315,7 @@ int send_command(const char *com, const char *arg) {
 		if (sent_bytes < 0) {
 			fprintf(
 				stderr,
-				MAGENTA("\tImpossibile inviare dati comando: %s\n"),
+				MAGENTA("\tERRORE: Impossibile inviare dati comando: %s\n"),
 				strerror(errno)
 			);
 			return -1;
@@ -299,7 +326,7 @@ int send_command(const char *com, const char *arg) {
 		} else if (sent_tot > com_len) {  // ROBA IN PIU'!!!
 			fprintf(
 				stderr,
-				MAGENTA("\tInvio comando fallito: inviati %ld byte in piu' "
+				MAGENTA("\tERRORE: Invio comando fallito: inviati %ld byte in piu' "
 						"della dimensione del comando\n"),
 				(sent_tot - com_len)
 			);
@@ -326,7 +353,7 @@ int send_command(const char *com, const char *arg) {
 		if (sent_bytes < 0) {
 			fprintf(
 				stderr,
-				MAGENTA("\tImpossibile inviare dati argomento: %s\n"),
+				MAGENTA("\tERRORE: Impossibile inviare dati argomento: %s\n"),
 				strerror(errno)
 			);
 			return -1;
@@ -342,7 +369,7 @@ int send_command(const char *com, const char *arg) {
 			if (sent_bytes < 0) {
 				fprintf(
 					stderr,
-					MAGENTA("\tImpossibile inviare dati argomento: %s\n"),
+					MAGENTA("\tERRORE: Impossibile inviare dati argomento: %s\n"),
 					strerror(errno)
 				);
 				return -1;
@@ -353,7 +380,7 @@ int send_command(const char *com, const char *arg) {
 			} else if (sent_tot > arg_len) {  // ROBA IN PIU'!!!
 				fprintf(
 					stderr,
-					MAGENTA("\tInvio argomento fallito: inviati %ld byte in piu' "
+					MAGENTA("\tERRORE: Invio argomento fallito: inviati %ld byte in piu' "
 							"della dimensione dell' argomento\n"),
 					(sent_tot - arg_len)
 				);
@@ -381,7 +408,7 @@ int receive_command(char **cmd, char **arg) {
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
 		fprintf(
 			stderr,
-			MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+			MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
 			strerror(errno)
 		);
 		return -1;
@@ -392,7 +419,7 @@ int receive_command(char **cmd, char **arg) {
 	if ((command = malloc(cmd_dim + 1)) == NULL) {
 		fprintf(
 			stderr,
-			MAGENTA("\tImpossibile allocare memoria per il comando: %s\n"),
+			MAGENTA("\tERRORE: Impossibile allocare memoria per il comando: %s\n"),
 			strerror(errno)
 		);
 		return -1;
@@ -406,7 +433,7 @@ int receive_command(char **cmd, char **arg) {
 		if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
 			fprintf(
 				stderr,
-				MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+				MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
 				strerror(errno)
 			);
 			free(command);
@@ -426,7 +453,7 @@ int receive_command(char **cmd, char **arg) {
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
 		fprintf(
 			stderr,
-			MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+			MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
 			strerror(errno)
 		);
 		free(command);
@@ -442,7 +469,7 @@ int receive_command(char **cmd, char **arg) {
 		if ((argument = malloc(arg_dim + 1)) == NULL) {
 			fprintf(
 				stderr,
-				MAGENTA("\tImpossibile allocare memoria per l'argomento: %s\n"),
+				MAGENTA("\tERRORE: Impossibile allocare memoria per l'argomento: %s\n"),
 				strerror(errno)
 			);
 			free(command);
@@ -456,7 +483,7 @@ int receive_command(char **cmd, char **arg) {
 			if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
 				fprintf(
 					stderr,
-					MAGENTA("\tImpossibile ricevere dati su socket: %s\n"),
+					MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
 					strerror(errno)
 				);
 				free(command);
