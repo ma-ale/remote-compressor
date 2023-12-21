@@ -65,12 +65,12 @@ int connect_to_server(struct sockaddr_in *sa) {
 
 void help(void) {
 	printf(
-		"Comandi disponibili:\n"
-		"help:\n --> mostra l'elenco dei comandi disponibili\n"
-		"add [file]\n --> invia il file specificato al server remoto\n"
-		"compress [alg]\n --> riceve dal server remoto "
-		"l'archivio compresso secondo l'algoritmo specificato\n"
-		"quit\n --> disconnessione\n\n"
+		"\tComandi disponibili:\n"
+		"\thelp:\n --> mostra l'elenco dei comandi disponibili\n"
+		"\tadd [file]\n --> invia il file specificato al server remoto\n"
+		"\tcompress [alg]\n --> riceve dal server remoto "
+		"\tl'archivio compresso secondo l'algoritmo specificato\n"
+		"\tquit\n --> disconnessione\n\n"
 	);
 }
 
