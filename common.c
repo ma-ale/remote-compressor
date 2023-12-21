@@ -9,10 +9,11 @@
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "common.h"
 
-// tolto extern int sd;
+#define CHUNK_SIZE 4096
 
 const int OK = 1;
 
@@ -147,16 +148,16 @@ int send_file(int sd, const char *path) {
 	// fopen(archivio, "r"); in windows archivio viene troncato >:(
 	FILE *file = fopen(path, "rb");
 
-	// manda il file byte per byte
+	// manda il file
 	ssize_t sent_tot = 0;
+	char	buff[CHUNK_SIZE];
 	while (1) {
-		char buff[1];
-		int	 c = fgetc(file);
-		if (c == EOF) {
+		ssize_t bytes_read = read(fileno(file), buff, CHUNK_SIZE);
+		if (bytes_read <= 0) {
 			break;
 		}
-		buff[0]	   = c;
-		sent_bytes = send(sd, buff, 1, 0);
+
+		sent_bytes = send(sd, buff, bytes_read, 0);
 		if (sent_bytes < 0) {
 			fprintf(
 				stderr,
@@ -165,18 +166,19 @@ int send_file(int sd, const char *path) {
 			);
 			return -1;
 		}
+
 		sent_tot += sent_bytes;
+		printf(YELLOW("\tInviati: %ld/%ld\n"), sent_tot, file_dim);
 		if (sent_tot >= file_dim) {
 			break;
 		}
 	}
+
 	// ascolta la risposta del server
 	printf(YELLOW("\tVerifica risposta dal server...\n"));
 	if (receive_response(sd) < 0) {
 		return -1;
 	}
-
-	printf(YELLOW("\tInviati %ld/%ld bytes di file\n"), sent_tot, file_dim);
 
 	if (sent_tot == file_dim) {
 		printf("\tFile %s inviato\n", path);
@@ -215,11 +217,11 @@ int receive_file(int sd, const char *path) {
 	}
 
 	// --- RICEZIONE FILE --- //
-	char	buff[1];
+	char	buff[CHUNK_SIZE];
 	ssize_t rcvd_bytes = 0;
 	ssize_t recv_tot   = 0;
 	while (recv_tot < (ssize_t)file_dim) {
-		rcvd_bytes = recv(sd, buff, 1, 0);
+		rcvd_bytes = recv(sd, buff, CHUNK_SIZE, 0);
 		if (rcvd_bytes < 0) {
 			fprintf(
 				stderr,
@@ -230,14 +232,19 @@ int receive_file(int sd, const char *path) {
 			fclose(file);
 			remove(path);
 			return -1;
+		} else if (rcvd_bytes == 0) {
+			break;
 		}
-		if (fputc(buff[0], file) == EOF) {
+		size_t bytes_written = write(fileno(file), buff, rcvd_bytes);
+
+		if (bytes_written < (size_t)rcvd_bytes) {
 			fprintf(stderr, MAGENTA("\tERRORE: Errore nella scrittura del file\n"));
 			fclose(file);
 			remove(path);
 			return -1;
 		}
 		recv_tot += rcvd_bytes;
+		printf(YELLOW("\tRicevuti %ld/%d\n"), recv_tot, file_dim);
 	}
 
 	fclose(file);
@@ -323,39 +330,22 @@ int send_command(int sd, const char *com, const char *arg) {
 
 	// --- INVIO TESTO COMANDO --- //
 	// manda il comando byte per byte
-	ssize_t sent_tot = 0;
-	char	buff[1];
-	while (1) {
-		buff[0]	   = com[sent_tot];
-		sent_bytes = send(sd, buff, 1, 0);
-		if (sent_bytes < 0) {
-			fprintf(
-				stderr,
-				MAGENTA("\tERRORE: Impossibile inviare dati comando: %s\n"),
-				strerror(errno)
-			);
-			return -1;
-		}
-		sent_tot += sent_bytes;
-		if (sent_tot == com_len) {
-			break;
-		} else if (sent_tot > com_len) {  // ROBA IN PIU'!!!
-			fprintf(
-				stderr,
-				MAGENTA("\tERRORE: Invio comando fallito: inviati %ld byte in piu' "
-						"della dimensione del comando\n"),
-				(sent_tot - com_len)
-			);
-			return -1;
-		}
-	}
 
+	sent_bytes = send(sd, com, com_len, 0);
+	if (sent_bytes < 0) {
+		fprintf(
+			stderr,
+			MAGENTA("\tERRORE: Impossibile inviare dati comando: %s\n"),
+			strerror(errno)
+		);
+		return -1;
+	}
 	// ascolta la risposta del server
 	printf(YELLOW("\tVerifica risposta dal server...\n"));
 	if (receive_response(sd) < 0) {
 		return -1;
 	}
-	printf(YELLOW("\tInviati %ld bytes di comando\n"), sent_tot);
+	printf(YELLOW("\tInviati %ld bytes di comando\n"), sent_bytes);
 
 	// --- INVIO LUNGHEZZA ARGOMENTO --- //
 	// se il secondo argomento è nullo allora manda solo la sua dimensione, ovvero 0
@@ -377,31 +367,15 @@ int send_command(int sd, const char *com, const char *arg) {
 		printf(YELLOW("\tInviati %ld bytes di lunghezza argomento\n"), sent_bytes);
 
 		// --- INVIO TESTO ARGOMENTO --- //
-		// manda l'argomento byte per byte
-		sent_tot = 0;
-		while (1) {
-			buff[0]	   = arg[sent_tot];
-			sent_bytes = send(sd, buff, 1, 0);
-			if (sent_bytes < 0) {
-				fprintf(
-					stderr,
-					MAGENTA("\tERRORE: Impossibile inviare dati argomento: %s\n"),
-					strerror(errno)
-				);
-				return -1;
-			}
-			sent_tot += sent_bytes;
-			if (sent_tot == arg_len) {
-				break;
-			} else if (sent_tot > arg_len) {  // ROBA IN PIU'!!!
-				fprintf(
-					stderr,
-					MAGENTA("\tERRORE: Invio argomento fallito: inviati %ld byte in piu' "
-							"della dimensione dell' argomento\n"),
-					(sent_tot - arg_len)
-				);
-				return -1;
-			}
+		// manda l'argomento
+		sent_bytes = send(sd, arg, arg_len, 0);
+		if (sent_bytes < 0) {
+			fprintf(
+				stderr,
+				MAGENTA("\tERRORE: Impossibile inviare dati argomento: %s\n"),
+				strerror(errno)
+			);
+			return -1;
 		}
 	}
 
@@ -411,7 +385,7 @@ int send_command(int sd, const char *com, const char *arg) {
 		return -1;
 	}
 
-	printf(YELLOW("\tInviati %ld bytes di argomento\n"), sent_tot);
+	printf(YELLOW("\tInviati %ld bytes di argomento\n"), sent_bytes);
 
 	return 0;
 }
@@ -442,21 +416,15 @@ int receive_command(int sd, char **cmd, char **arg) {
 	}
 	command[cmd_dim] = '\0';
 
-	// riceve il comando byte per byte
-	ssize_t recv_tot = 0, rcvd_bytes = 0;
-	char	buf[1];
-	while (recv_tot < (ssize_t)cmd_dim) {
-		if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
-			fprintf(
-				stderr,
-				MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
-				strerror(errno)
-			);
-			free(command);
-			return -1;
-		}
-		command[recv_tot] = buf[0];
-		recv_tot += rcvd_bytes;
+	// ricevi il comando
+	if (recv(sd, command, cmd_dim, 0) < 0) {
+		fprintf(
+			stderr,
+			MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
+			strerror(errno)
+		);
+		free(command);
+		return -1;
 	}
 	*cmd = command;
 
@@ -495,24 +463,20 @@ int receive_command(int sd, char **cmd, char **arg) {
 		}
 		argument[arg_dim] = '\0';
 
-		// riceve l'argomento byte per byte
-		recv_tot = 0, rcvd_bytes = 0;
-		while (recv_tot < (ssize_t)arg_dim) {
-			if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
-				fprintf(
-					stderr,
-					MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
-					strerror(errno)
-				);
-				free(command);
-				free(argument);
-				return -1;
-			}
-			argument[recv_tot] = buf[0];
-			recv_tot += rcvd_bytes;
+		// ricevi l'argomento
+		if (recv(sd, argument, arg_dim, 0) < 0) {
+			fprintf(
+				stderr,
+				MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
+				strerror(errno)
+			);
+			free(command);
+			free(argument);
+			return -1;
 		}
-		*arg = argument;
 	}
+	*arg = argument;
+
 	// argomento ricevuto, manda riscontro al peer
 	if (send_response(sd, OK) < 0) {
 		return -1;
