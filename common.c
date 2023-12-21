@@ -153,14 +153,15 @@ int send_file(const char *path) {
 
 	// manda il file byte per byte
 	ssize_t sent_tot = 0;
+	char	buff[CHUNK_SIZE];
 	while (1) {
-		char buff[1];
-		int	 c = fgetc(file);
-		if (c == EOF) {
+		ssize_t bytes_read = fread(buff, sizeof(char), CHUNK_SIZE, file);
+		if (bytes_read == 0) {
 			break;
 		}
-		buff[0]	   = c;
-		sent_bytes = send(sd, buff, 1, 0);
+		printf("Letto %ld\n", bytes_read);
+
+		sent_bytes = send(sd, buff, bytes_read, 0);
 		if (sent_bytes < 0) {
 			fprintf(
 				stderr,
@@ -169,11 +170,14 @@ int send_file(const char *path) {
 			);
 			return -1;
 		}
+
 		sent_tot += sent_bytes;
+		printf("inviati: %ld\n", sent_tot);
 		if (sent_tot >= file_dim) {
 			break;
 		}
 	}
+
 	// ascolta la risposta del server
 	printf(YELLOW("\tVerifica risposta dal server...\n"));
 	if (receive_response() < 0) {
@@ -219,11 +223,12 @@ int receive_file(const char *path) {
 	}
 
 	// --- RICEZIONE FILE --- //
-	char	buff[1];
+	char	buff[CHUNK_SIZE];
 	ssize_t rcvd_bytes = 0;
 	ssize_t recv_tot   = 0;
 	while (recv_tot < (ssize_t)file_dim) {
-		rcvd_bytes = recv(sd, buff, 1, 0);
+		rcvd_bytes = recv(sd, buff, CHUNK_SIZE, 0);
+		printf("Ricevuto %ld\n", rcvd_bytes);
 		if (rcvd_bytes < 0) {
 			fprintf(
 				stderr,
@@ -234,8 +239,13 @@ int receive_file(const char *path) {
 			fclose(file);
 			remove(path);
 			return -1;
+		} else if (rcvd_bytes == 0) {
+			break;
 		}
-		if (fputc(buff[0], file) == EOF) {
+		size_t bytes_written = fwrite(buff, 1, rcvd_bytes, file);
+		printf("Scritti %ld\n", bytes_written);
+
+		if (bytes_written < (size_t)rcvd_bytes) {
 			fprintf(stderr, MAGENTA("\tERRORE: Errore nella scrittura del file\n"));
 			fclose(file);
 			remove(path);
