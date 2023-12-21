@@ -68,7 +68,7 @@ int process_client(void) {
 			char command[sizeof("rm -rf ") + sizeof(myfolder)];
 			snprintf(command, sizeof(command), "rm -rf %s", myfolder);
 			system(command);
-			printf("\tClient disconnesso\n"));
+			printf("\tClient disconnesso\n");
 			break;
 		} else if (strcmp(cmd, "add") == 0) {
 			// controllo di avere il nome del file
