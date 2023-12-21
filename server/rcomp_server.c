@@ -51,6 +51,14 @@ int process_client(const char *myfolder) {
 	char *cmd = NULL, *arg = NULL;
 
 	while (1) {
+		// evitiamo di introdurre memory leak :p
+		if (arg != NULL) {
+			free(arg);
+		}
+		if (cmd != NULL) {
+			free(cmd);
+		}
+
 		if (receive_command(sd, &cmd, &arg) < 0) {
 			fprintf(
 				stderr,
@@ -75,7 +83,7 @@ int process_client(const char *myfolder) {
 				fprintf(
 					stderr, MAGENTA("\tERRORE: Ricevuto il comando add senza file\n")
 				);
-				goto free_args;
+				continue;
 			}
 
 			// crea una cartella temporanea del processo
@@ -102,7 +110,7 @@ int process_client(const char *myfolder) {
 				if (is_network_error(errno)) {
 					quit();
 				}
-				goto free_args;
+				continue;
 			}
 
 		} else if (strcmp(cmd, "compress") == 0) {
@@ -113,7 +121,7 @@ int process_client(const char *myfolder) {
 					stderr,
 					MAGENTA("\tERRORE: Ricevuto il comando compress senza algoritmo\n")
 				);
-				goto free_args;
+				continue;
 			}
 
 			char *archivename;
@@ -121,7 +129,7 @@ int process_client(const char *myfolder) {
 
 			if (alg[0] != 'z' && alg[0] != 'j') {
 				fprintf(stderr, MAGENTA("\tERRORE: Algoritmo non conosciuto\n"));
-				goto free_args;
+				continue;
 			}
 
 			get_filename(alg[0], &archivename);
@@ -134,7 +142,7 @@ int process_client(const char *myfolder) {
 				if (send_response(sd, !OK) < 0) {
 					return -1;
 				}
-				goto free_args;
+				continue;
 			}
 			if (send_response(sd, OK) < 0) {
 				return -1;
@@ -152,16 +160,6 @@ int process_client(const char *myfolder) {
 				}
 			}
 			free(archivename);
-		}
-
-	// brutte cose a me
-	free_args:
-		// evitiamo di introdurre memory leak :p
-		if (arg) {
-			free(arg);
-		}
-		if (cmd) {
-			free(cmd);
 		}
 	}
 
