@@ -189,6 +189,9 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
+	// ignora la sigpipe
+	signal(SIGPIPE, SIG_IGN);
+
 	printf(YELLOW("\tSocket %d associato a %s:%d\n"), listen_sd, addr_str, port_no);
 
 	// --- LISTENING --- //

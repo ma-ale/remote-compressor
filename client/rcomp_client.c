@@ -101,6 +101,9 @@ int main(int argc, char *argv[]) {
 
 	// per rendere la chiusura con ^C piu' gentile, faccio fare la quit
 	signal(SIGINT, quit);
+	// ignora la sigpipe
+	signal(SIGPIPE, SIG_IGN);
+
 	// contatore della add
 	int n_add = 0;
 	// loop
