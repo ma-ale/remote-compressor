@@ -224,7 +224,6 @@ int receive_file(const char *path) {
 
 	// --- RICEZIONE FILE --- //
 	char	buff[CHUNK_SIZE];
-	char	buff[CHUNK_SIZE];
 	ssize_t rcvd_bytes = 0;
 	ssize_t recv_tot   = 0;
 	while (recv_tot < (ssize_t)file_dim) {
