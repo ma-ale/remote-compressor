@@ -146,13 +146,6 @@ int send_file(const char *path) {
 }
 
 int receive_file(const char *path) {
-	// apri o crea il file specificato da path in scrittura, troncato a zero
-	FILE *file = fopen(path, "w+b");
-	if (file == NULL) {
-		fprintf(stderr, MAGENTA("\tImpossibile aprire il file: %s\n"), strerror(errno));
-		return -1;
-	}
-
 	// --- RICEZIONE LUNGHEZZA FILE --- //
 	uint32_t msg_len = 0, file_dim = 0;
 	if (recv(sd, &msg_len, sizeof(int), 0) < 0) {
@@ -171,6 +164,13 @@ int receive_file(const char *path) {
 		return -1;
 	}
 	printf(YELLOW("\tRicevuti %d byte di lunghezza del file\n"), file_dim);
+
+	// apri o crea il file specificato da path in scrittura, troncato a zero
+	FILE *file = fopen(path, "w+b");
+	if (file == NULL) {
+		fprintf(stderr, MAGENTA("\tImpossibile aprire il file: %s\n"), strerror(errno));
+		return -1;
+	}
 
 	// --- RICEZIONE FILE --- //
 	char	buff[1];
