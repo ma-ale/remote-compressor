@@ -155,8 +155,9 @@ int send_file(const char *path) {
 	ssize_t sent_tot = 0;
 	char	buff[CHUNK_SIZE];
 	while (1) {
-		ssize_t bytes_read = fread(buff, sizeof(char), CHUNK_SIZE, file);
-		if (bytes_read == 0) {
+		ssize_t bytes_read = read(fileno(file), buff, CHUNK_SIZE);
+		printf("eccoci %ld\n", bytes_read);
+		if (bytes_read <= 0) {
 			break;
 		}
 		printf("Letto %ld\n", bytes_read);
@@ -241,7 +242,7 @@ int receive_file(const char *path) {
 		} else if (rcvd_bytes == 0) {
 			break;
 		}
-		size_t bytes_written = fwrite(buff, 1, rcvd_bytes, file);
+		size_t bytes_written = write(fileno(file), buff, rcvd_bytes);
 		printf("Scritti %ld\n", bytes_written);
 
 		if (bytes_written < (size_t)rcvd_bytes) {
