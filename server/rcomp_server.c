@@ -25,7 +25,6 @@ void quit() {
 		exit(EXIT_FAILURE);
 	}
 	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"));
-	exit(EXIT_SUCCESS);
 }
 
 // attraverso la funzione "system()" comprime la cartella dei file del client
@@ -44,12 +43,8 @@ int compress_folder(const char *dirname, const char *archivename, char alg) {
 }
 
 // gestisce il socket di un client
-int process_client(void) {
+int process_client(const char *myfolder) {
 	char *cmd = NULL, *arg = NULL;
-
-	// nome della mia personalissima cartella
-	char myfolder[64];
-	snprintf(myfolder, sizeof(myfolder), "folder-%d", getpid());
 
 	while (1) {
 		if (receive_command(&cmd, &arg) < 0) {
@@ -57,17 +52,14 @@ int process_client(void) {
 			fprintf(stderr, MAGENTA("\tImpossibile ricevere il comando\n"));
 			if (errno == ECONNABORTED || errno == ECONNREFUSED) {
 				close(sd);
-				exit(EXIT_FAILURE);
+				return -1;
 			}
 			continue;
 		}
 
 		if (strcmp(cmd, "quit") == 0) {
 			send_response(OK);
-			// rimuovi la cartella
-			char command[sizeof("rm -rf ") + sizeof(myfolder)];
-			snprintf(command, sizeof(command), "rm -rf %s", myfolder);
-			system(command);
+			quit();
 			break;
 		} else if (strcmp(cmd, "add") == 0) {
 			// controllo di avere il nome del file
@@ -228,7 +220,12 @@ int main(int argc, char *argv[]) {
 		}
 
 		pid_t pid;
-		if ((pid = fork()) < 0) {
+		pid = fork();
+
+		// nome della cartella del figlio
+		char childfolder[64];
+
+		if (pid < 0) {
 			fprintf(
 				stderr,
 				MAGENTA("\tImpossibile creare un processo figlio: %s\n"),
@@ -239,13 +236,22 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		} else if (pid == 0) {
 			// processo figlio
-			if (process_client() < 0) {
+
+			snprintf(childfolder, sizeof(childfolder), "folder-%d", getpid());
+			if (process_client(childfolder) < 0) {
 				fprintf(stderr, RED("\tProcesso figlio uscito con errore\n"));
 				exit(EXIT_FAILURE);
 			}
+
 			exit(EXIT_SUCCESS);
 		} else {
 			// processo genitore
+			snprintf(childfolder, sizeof(childfolder), "folder-%d", pid);
+			printf(
+				YELLOW("Creato processo figlio pid: %d, childfolder: '%s'\n"),
+				pid,
+				childfolder
+			);
 			if (wait(NULL) < 0) {
 				fprintf(
 					stderr,
@@ -254,7 +260,12 @@ int main(int argc, char *argv[]) {
 				);
 			}
 			printf(YELLOW("\tIl processo %d ha terminato\n"), pid);
-			// TODO: qua il padre pulisce per il figlio la directory e il file
+			// rimuovi la cartella del figlio se esiste
+			char rm_command[sizeof("rm -rf ") + sizeof(childfolder) + 1];
+			snprintf(rm_command, sizeof(rm_command), "rm -rf %s", childfolder);
+			if (system(rm_command)) {
+				fprintf(stderr, RED("Impossibile eliminare la cartella del figlio\n"));
+			}
 		}
 	}
 
