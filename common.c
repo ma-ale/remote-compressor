@@ -456,21 +456,15 @@ int receive_command(char **cmd, char **arg) {
 	}
 	command[cmd_dim] = '\0';
 
-	// riceve il comando byte per byte
-	ssize_t recv_tot = 0, rcvd_bytes = 0;
-	char	buf[1];
-	while (recv_tot < (ssize_t)cmd_dim) {
-		if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
-			fprintf(
-				stderr,
-				MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
-				strerror(errno)
-			);
-			free(command);
-			return -1;
-		}
-		command[recv_tot] = buf[0];
-		recv_tot += rcvd_bytes;
+	// ricevi il comando
+	if (recv(sd, command, cmd_dim, 0) < 0) {
+		fprintf(
+			stderr,
+			MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
+			strerror(errno)
+		);
+		free(command);
+		return -1;
 	}
 	*cmd = command;
 
@@ -509,24 +503,20 @@ int receive_command(char **cmd, char **arg) {
 		}
 		argument[arg_dim] = '\0';
 
-		// riceve l'argomento byte per byte
-		recv_tot = 0, rcvd_bytes = 0;
-		while (recv_tot < (ssize_t)arg_dim) {
-			if ((rcvd_bytes = recv(sd, buf, 1, 0)) < 0) {
-				fprintf(
-					stderr,
-					MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
-					strerror(errno)
-				);
-				free(command);
-				free(argument);
-				return -1;
-			}
-			argument[recv_tot] = buf[0];
-			recv_tot += rcvd_bytes;
+		// ricevi l'argomento
+		if (recv(sd, argument, arg_dim, 0) < 0) {
+			fprintf(
+				stderr,
+				MAGENTA("\tERRORE: Impossibile ricevere dati su socket: %s\n"),
+				strerror(errno)
+			);
+			free(command);
+			free(argument);
+			return -1;
 		}
-		*arg = argument;
 	}
+	*arg = argument;
+
 	// argomento ricevuto, manda riscontro al peer
 	if (send_response(OK) < 0) {
 		return -1;
