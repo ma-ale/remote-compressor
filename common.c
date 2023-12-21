@@ -81,7 +81,7 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 }
 
 int send_file(const char *path) {
-    printf("\tInvio del file %s al server in corso...\n", path);
+	printf("\tInvio del file %s al server in corso...\n", path);
 	ssize_t file_dim = file_dimension(path);
 	if (file_dim < 0) {
 		// l'errore specifico viene stampato da file_dimension()
@@ -149,8 +149,8 @@ int send_file(const char *path) {
 
 	printf(YELLOW("\tInviati %ld/%ld bytes di file\n"), sent_tot, file_dim);
 
-	if (sent_tot == file_dim){
-        printf("\tFile %s inviato\n", path);
+	if (sent_tot == file_dim) {
+		printf("\tFile %s inviato\n", path);
 	}
 
 	return 0;
