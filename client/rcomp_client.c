@@ -75,8 +75,6 @@ void help(void) {
 }
 
 int main(int argc, char *argv[]) {
-	// system("clear");
-	printf("\n\n\n\n\n");
 	// leggi gli argomenti dal terminale e determina l'indirizzo del server
 	// e la porta
 	//		argv[1] = indirizzo

@@ -26,7 +26,9 @@ void quit() {
 		);
 		exit(EXIT_FAILURE);
 	}
-	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"));
+	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"
+	) "\tDisconnessione effettuata\n");
+	exit(EXIT_SUCCESS);
 }
 
 // attraverso la funzione "system()" comprime la cartella dei file del client
@@ -250,7 +252,7 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		} else if (pid == 0) {
 			// processo figlio
-
+			signal(SIGINT, quit);
 			snprintf(childfolder, sizeof(childfolder), "folder-%d", getpid());
 			if (process_client(childfolder) < 0) {
 				fprintf(stderr, RED("\tERRORE: Processo figlio uscito con errore\n"));
