@@ -9,8 +9,11 @@
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "common.h"
+
+#define CHUNK_SIZE 4096
 
 // il socket descriptor da usare
 extern int sd;
