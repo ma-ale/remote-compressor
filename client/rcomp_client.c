@@ -20,12 +20,13 @@ int sd = -1;
 
 void quit() {
 	if (close(sd) < 0) {
-		fprintf(stderr, RED("\tERRORE: Impossibile chiudere il socket: %s\n"), strerror(errno));
+		fprintf(
+			stderr, RED("\tERRORE: Impossibile chiudere il socket: %s\n"), strerror(errno)
+		);
 		exit(EXIT_FAILURE);
 	}
-	printf(YELLOW("\tChiusura del socket avvenuta con successo\n")
-        "\tDisconnessione effettuata\n"
-        );
+	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"
+	) "\tDisconnessione effettuata\n");
 	exit(EXIT_SUCCESS);
 }
 
@@ -54,7 +55,9 @@ int read_command(char *str, char **com, char **arg) {
 
 int connect_to_server(struct sockaddr_in *sa) {
 	if (connect(sd, (struct sockaddr *)sa, sizeof(struct sockaddr_in)) < 0) {
-		fprintf(stderr, MAGENTA("\tERRORE: Impossibile connettersi: %s\n"), strerror(errno));
+		fprintf(
+			stderr, MAGENTA("\tERRORE: Impossibile connettersi: %s\n"), strerror(errno)
+		);
 		return -1;
 	}
 	return 0;
@@ -107,8 +110,9 @@ int main(int argc, char *argv[]) {
 		printf("rcomp> ");
 		if (fgets(userinput, sizeof(userinput) - 1, stdin) == NULL) {
 			fprintf(
-				stderr, MAGENTA("\tERRORE: Impossibile accettare comando: %s\n"),
-                strerror(errno)
+				stderr,
+				MAGENTA("\tERRORE: Impossibile accettare comando: %s\n"),
+				strerror(errno)
 			);
 			continue;
 		}
@@ -138,8 +142,8 @@ int main(int argc, char *argv[]) {
 			help();
 		} else if (strcmp(cmd, "quit") == 0) {
 			send_command("quit", NULL);
-			close(sd);	// quit del client
-			exit(EXIT_SUCCESS);
+			quit();
+			break;
 		} else if (strcmp(cmd, "compress") == 0) {
 			if (n_add < 1) {
 				fprintf(
@@ -163,7 +167,8 @@ int main(int argc, char *argv[]) {
 
 			if (receive_response() < 0) {
 				fprintf(
-					stderr, MAGENTA("\tERRORE: Il server ha fallito nel comprimere i file\n")
+					stderr,
+					MAGENTA("\tERRORE: Il server ha fallito nel comprimere i file\n")
 				);
 				continue;
 			}
@@ -201,14 +206,18 @@ int main(int argc, char *argv[]) {
 			}
 
 			if (invalid_name) {
-				fprintf(stderr, MAGENTA("\tERRORE: Nome file '%s' non valido\n"), filename);
+				fprintf(
+					stderr, MAGENTA("\tERRORE: Nome file '%s' non valido\n"), filename
+				);
 				continue;
 			}
 
 			send_command("add", filename);
 			if (send_file(arg) < 0) {
 				fprintf(
-					stderr, MAGENTA("\tERRORE: Errore nel trasferimento del file %s\n"), filename
+					stderr,
+					MAGENTA("\tERRORE: Errore nel trasferimento del file %s\n"),
+					filename
 				);
 				return -1;
 			}
