@@ -21,7 +21,7 @@ int				 sd = -1;
 
 void quit() {
 	if (close(sd) < 0) {
-		fprintf(stderr, RED("\tImpossibile chiudere il socket: %s\n"), strerror(errno));
+		fprintf(stderr, RED("\tERRORE: Impossibile chiudere il socket: %s\n"), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"));
@@ -37,7 +37,7 @@ int compress_folder(const char *dirname, const char *archivename, char alg) {
 
 	printf(YELLOW("\tEsecuzione comando: '%s'\n"), cmd);
 	if (system(cmd) != 0) {
-		fprintf(stderr, MAGENTA("Comando fallito\n"));
+		fprintf(stderr, MAGENTA("\tERRORE: Comando fallito\n"));
 		return -1;
 	}
 	return 0;
@@ -54,7 +54,7 @@ int process_client(void) {
 	while (1) {
 		if (receive_command(&cmd, &arg) < 0) {
 			// su windows SIGPIPE e EPIPE non sono supportati causando un ciclo infinito
-			fprintf(stderr, MAGENTA("\tImpossibile ricevere il comando\n"));
+			fprintf(stderr, MAGENTA("\tERRORE: Impossibile ricevere il comando\n"));
 			if (errno == ECONNABORTED || errno == ECONNREFUSED) {
 				close(sd);
 				exit(EXIT_FAILURE);
@@ -68,12 +68,13 @@ int process_client(void) {
 			char command[sizeof("rm -rf ") + sizeof(myfolder)];
 			snprintf(command, sizeof(command), "rm -rf %s", myfolder);
 			system(command);
+			printf("\tClient disconnesso\n"));
 			break;
 		} else if (strcmp(cmd, "add") == 0) {
 			// controllo di avere il nome del file
 			char *filename = arg;
 			if (filename == NULL) {
-				fprintf(stderr, MAGENTA("\tRicevuto il comando add senza file\n"));
+				fprintf(stderr, MAGENTA("\tERRORE: Ricevuto il comando add senza file\n"));
 				goto free_args;
 			}
 
@@ -82,7 +83,7 @@ int process_client(void) {
 			if (e < 0 && errno != EEXIST) {
 				fprintf(
 					stderr,
-					MAGENTA("\tImpossibile creare la cartella di processo: %s\n"),
+					MAGENTA("\tERRORE: Impossibile creare la cartella di processo: %s\n"),
 					strerror(errno)
 				);
 				return -1;
@@ -93,7 +94,7 @@ int process_client(void) {
 			chdir("..");
 
 			if (e < 0) {
-				fprintf(stderr, MAGENTA("\tImpossibile ricevere il file %s\n"), filename);
+				fprintf(stderr, MAGENTA("\tERRORE: Impossibile ricevere il file %s\n"), filename);
 				goto free_args;
 			}
 
@@ -102,7 +103,7 @@ int process_client(void) {
 			char *alg = arg;
 			if (alg == NULL) {
 				fprintf(
-					stderr, MAGENTA("\tRicevuto il comando compress senza algoritmo\n")
+					stderr, MAGENTA("\tERRORE: Ricevuto il comando compress senza algoritmo\n")
 				);
 				goto free_args;
 			}
@@ -111,7 +112,7 @@ int process_client(void) {
 			int	  e = 0;
 
 			if (alg[0] != 'z' && alg[0] != 'j') {
-				fprintf(stderr, MAGENTA("\tAlgoritmo non conosciuto\n"));
+				fprintf(stderr, MAGENTA("\tERRORE: Algoritmo non conosciuto\n"));
 				goto free_args;
 			}
 
@@ -119,7 +120,7 @@ int process_client(void) {
 			e = compress_folder(myfolder, archivename, alg[0]);
 
 			if (e < 0) {
-				fprintf(stderr, MAGENTA("\tImpossibile comprimere %s\n"), myfolder);
+				fprintf(stderr, MAGENTA("\tERRORE: Impossibile comprimere %s\n"), myfolder);
 				send_response(!OK);
 				goto free_args;
 			}
@@ -128,7 +129,7 @@ int process_client(void) {
 			e = send_file(archivename);
 			if (e < 0) {
 				fprintf(
-					stderr, MAGENTA("\tImpossibile inviare l'archivio %s\n"), archivename
+					stderr, MAGENTA("\tERRORE: Impossibile inviare l'archivio %s\n"), archivename
 				);
 			}
 			free(archivename);
@@ -164,7 +165,7 @@ int main(int argc, char *argv[]) {
 	int				   listen_sd;
 	struct sockaddr_in sa;
 	if (socket_stream(addr_str, port_no, &listen_sd, &sa) < 0) {
-		fprintf(stderr, RED("\tImpossibile creare il socket: %s\n"), strerror(errno));
+		fprintf(stderr, RED("\tERRORE: Impossibile creare il socket: %s\n"), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 	// --- BINDING --- //
@@ -173,7 +174,7 @@ int main(int argc, char *argv[]) {
 	if (bind(listen_sd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
 		fprintf(
 			stderr,
-			RED("\tImpossibile associare l'indirizzo a un socket: %s\n"),
+			RED("\tERRORE: Impossibile associare l'indirizzo a un socket: %s\n"),
 			strerror(errno)
 		);
 		exit(EXIT_FAILURE);
@@ -185,14 +186,14 @@ int main(int argc, char *argv[]) {
 	if (listen(listen_sd, 10) < 0) {
 		fprintf(
 			stderr,
-			RED("\tImpossibile mettersi in attesa su socket: %s\n"),
+			RED("\tERRORE: Impossibile mettersi in attesa su socket: %s\n"),
 			strerror(errno)
 		);
 		exit(EXIT_FAILURE);
 	}
 
 	// --- ATTESA DI CONNESSIONE --- //
-	printf(YELLOW("\t--- In attesa di connessione ---\n"));
+	printf("\tIn attesa di connessione sulla porta %d\n", port_no);
 
 	struct sockaddr_in client_addr;
 	char			   client_addr_str[INET_ADDRSTRLEN];
@@ -203,7 +204,7 @@ int main(int argc, char *argv[]) {
 		if (sd < 0) {
 			fprintf(
 				stderr,
-				MAGENTA("\tImpossibile accettare connessione su socket: %s\n"),
+				MAGENTA("\tERRORE: Impossibile accettare connessione su socket: %s\n"),
 				strerror(errno)
 			);
 			continue;
@@ -216,12 +217,12 @@ int main(int argc, char *argv[]) {
 		if (res == NULL) {
 			fprintf(
 				stderr,
-				MAGENTA("\tImpossibile convertire l'indirizzo: %s\n"),
+				MAGENTA("\tERRORE: Impossibile convertire l'indirizzo: %s\n"),
 				strerror(errno)
 			);
 		} else {
 			printf(
-				YELLOW("\tConnesso col client %s:%d\n"),
+				("\tConnessione stabilita con il client %s:%d\n"),
 				addr_str,
 				ntohs(client_addr.sin_port)
 			);
@@ -231,7 +232,7 @@ int main(int argc, char *argv[]) {
 		if ((pid = fork()) < 0) {
 			fprintf(
 				stderr,
-				MAGENTA("\tImpossibile creare un processo figlio: %s\n"),
+				MAGENTA("\tERRORE: Impossibile creare un processo figlio: %s\n"),
 				strerror(errno)
 			);
 			close(sd);
@@ -240,7 +241,7 @@ int main(int argc, char *argv[]) {
 		} else if (pid == 0) {
 			// processo figlio
 			if (process_client() < 0) {
-				fprintf(stderr, RED("\tProcesso figlio uscito con errore\n"));
+				fprintf(stderr, RED("\tERRORE: Processo figlio uscito con errore\n"));
 				exit(EXIT_FAILURE);
 			}
 			exit(EXIT_SUCCESS);
@@ -249,7 +250,7 @@ int main(int argc, char *argv[]) {
 			if (wait(NULL) < 0) {
 				fprintf(
 					stderr,
-					RED("\tImpossibile creare un processo figlio: %s\n"),
+					RED("\tERRORE: Impossibile creare un processo figlio: %s\n"),
 					strerror(errno)
 				);
 			}
