@@ -156,11 +156,9 @@ int send_file(const char *path) {
 	char	buff[CHUNK_SIZE];
 	while (1) {
 		ssize_t bytes_read = read(fileno(file), buff, CHUNK_SIZE);
-		printf("eccoci %ld\n", bytes_read);
 		if (bytes_read <= 0) {
 			break;
 		}
-		printf("Letto %ld\n", bytes_read);
 
 		sent_bytes = send(sd, buff, bytes_read, 0);
 		if (sent_bytes < 0) {
@@ -173,7 +171,7 @@ int send_file(const char *path) {
 		}
 
 		sent_tot += sent_bytes;
-		printf("inviati: %ld\n", sent_tot);
+		printf(YELLOW("\tInviati: %ld/%ld\n"), sent_tot, file_dim);
 		if (sent_tot >= file_dim) {
 			break;
 		}
@@ -184,8 +182,6 @@ int send_file(const char *path) {
 	if (receive_response() < 0) {
 		return -1;
 	}
-
-	printf(YELLOW("\tInviati %ld/%ld bytes di file\n"), sent_tot, file_dim);
 
 	if (sent_tot == file_dim) {
 		printf("\tFile %s inviato\n", path);
@@ -243,7 +239,6 @@ int receive_file(const char *path) {
 			break;
 		}
 		size_t bytes_written = write(fileno(file), buff, rcvd_bytes);
-		printf("Scritti %ld\n", bytes_written);
 
 		if (bytes_written < (size_t)rcvd_bytes) {
 			fprintf(stderr, MAGENTA("\tERRORE: Errore nella scrittura del file\n"));
@@ -252,6 +247,7 @@ int receive_file(const char *path) {
 			return -1;
 		}
 		recv_tot += rcvd_bytes;
+		printf(YELLOW("\tRicevuti %ld/%d\n"), recv_tot, file_dim);
 	}
 
 	fclose(file);
