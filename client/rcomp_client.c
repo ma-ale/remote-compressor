@@ -20,10 +20,12 @@ int sd = -1;
 
 void quit() {
 	if (close(sd) < 0) {
-		fprintf(stderr, RED("\tImpossibile chiudere il socket: %s\n"), strerror(errno));
+		fprintf(stderr, RED("\tERRORE: Impossibile chiudere il socket: %s\n"), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
-	printf(YELLOW("\tChiusura del socket avvenuta con successo\n"));
+	printf(YELLOW("\tChiusura del socket avvenuta con successo\n")
+        "\tDisconnessione effettuata\n"
+        );
 	exit(EXIT_SUCCESS);
 }
 
@@ -52,7 +54,7 @@ int read_command(char *str, char **com, char **arg) {
 
 int connect_to_server(struct sockaddr_in *sa) {
 	if (connect(sd, (struct sockaddr *)sa, sizeof(struct sockaddr_in)) < 0) {
-		fprintf(stderr, MAGENTA("\tImpossibile connettersi: %s\n"), strerror(errno));
+		fprintf(stderr, MAGENTA("\tERRORE: Impossibile connettersi: %s\n"), strerror(errno));
 		return -1;
 	}
 	return 0;
@@ -86,7 +88,7 @@ int main(int argc, char *argv[]) {
 	// creazione del socket
 	struct sockaddr_in sa;
 	if (socket_stream(addr_str, port_no, &sd, &sa) < 0) {
-		fprintf(stderr, RED("\tImpossibile creare il socket\n"));
+		fprintf(stderr, RED("\tERRORE: Impossibile creare il socket\n"));
 		exit(EXIT_FAILURE);
 	}
 
@@ -105,14 +107,15 @@ int main(int argc, char *argv[]) {
 		printf("rcomp> ");
 		if (fgets(userinput, sizeof(userinput) - 1, stdin) == NULL) {
 			fprintf(
-				stderr, MAGENTA("\tImpossibile accettare comando: %s\n"), strerror(errno)
+				stderr, MAGENTA("\tERRORE: Impossibile accettare comando: %s\n"),
+                strerror(errno)
 			);
 			continue;
 		}
 		// rimuovi il newline dall'input
 		size_t uin_len = strlen(userinput);
 		if (uin_len == 0) {
-			fprintf(stderr, MAGENTA("\tInput utente di lunghezza zero\n"));
+			fprintf(stderr, MAGENTA("\tERRORE: Input utente di lunghezza zero\n"));
 			continue;
 		}
 		if (userinput[uin_len - 1] == '\n') {
@@ -126,7 +129,7 @@ int main(int argc, char *argv[]) {
 		char *cmd;
 		char *arg;
 		if (read_command(userinput, &cmd, &arg) < 0) {
-			fprintf(stderr, MAGENTA("\tTroppi argomenti\n"));
+			fprintf(stderr, MAGENTA("\tERRORE: Troppi argomenti\n"));
 			help();
 			continue;
 		}
@@ -152,7 +155,7 @@ int main(int argc, char *argv[]) {
 			}
 
 			if (strcmp(arg, "z") != 0 && strcmp(arg, "j") != 0) {
-				fprintf(stderr, MAGENTA("\tCampo [alg] non valido\n"));
+				fprintf(stderr, MAGENTA("\tERRORE: Campo [alg] non valido\n"));
 				continue;
 			}
 
@@ -160,7 +163,7 @@ int main(int argc, char *argv[]) {
 
 			if (receive_response() < 0) {
 				fprintf(
-					stderr, MAGENTA("\tIl server ha fallito nel comprimere i file\n")
+					stderr, MAGENTA("\tERRORE: Il server ha fallito nel comprimere i file\n")
 				);
 				continue;
 			}
@@ -174,7 +177,7 @@ int main(int argc, char *argv[]) {
 			n_add = 0;
 		} else if (strcmp(cmd, "add") == 0) {
 			if (arg == NULL) {
-				fprintf(stderr, MAGENTA("\tCampo [file] mancante\n"));
+				fprintf(stderr, MAGENTA("\tERRORE: Campo [file] mancante\n"));
 				continue;
 			}
 			char *filename = arg;
@@ -198,20 +201,20 @@ int main(int argc, char *argv[]) {
 			}
 
 			if (invalid_name) {
-				fprintf(stderr, MAGENTA("\tNome file '%s' non valido\n"), filename);
+				fprintf(stderr, MAGENTA("\tERRORE: Nome file '%s' non valido\n"), filename);
 				continue;
 			}
 
 			send_command("add", filename);
 			if (send_file(arg) < 0) {
 				fprintf(
-					stderr, MAGENTA("\tErrore nel trasferimento del file %s\n"), filename
+					stderr, MAGENTA("\tERRORE: Errore nel trasferimento del file %s\n"), filename
 				);
 				return -1;
 			}
 			n_add++;
 		} else {
-			printf(MAGENTA("\tComanado non riconosciuto\n"));
+			printf(MAGENTA("\tERRORE: Comanado non riconosciuto\n"));
 			help();
 		}
 	}

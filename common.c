@@ -113,6 +113,9 @@ int send_file(const char *path) {
 	}
 	printf(YELLOW("\tInviati %ld bytes di lunghezza file\n"), sent_bytes);
 
+	// lo devo aprire come file binary altrimenti la conversione implicita a file di testo
+	// che avviene nei sistemi non-UNIX tronca il file a zero, in sostanza se facessi solo
+	// fopen(archivio, "r"); in windows archivio viene troncato >:(
 	FILE *file = fopen(path, "rb");
 
 	// manda il file byte per byte
@@ -211,7 +214,7 @@ int receive_file(const char *path) {
 		return -1;
 	}
 
-	printf(YELLOW("\tFile %s ricevuto. Ricevuti %ld byte\n"), path, recv_tot);
+	printf("\tFile %s " YELLOW("di %ld byte") " ricevuto\n", path, recv_tot);
 	send_response(OK);
 	return 0;
 }
@@ -459,6 +462,7 @@ int receive_command(char **cmd, char **arg) {
 	}
 	// argomento ricevuto, manda riscontro al peer
 	send_response(OK);
+	printf(("\tRicezione comando %s \n"), command);
 
 	return 0;
 }
