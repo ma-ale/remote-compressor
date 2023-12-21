@@ -39,28 +39,28 @@ int get_filename(char ext, char **file_name);
 int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in *sa);
 
 // invia un file al peer specificato dalla variabile esterna sd
-int send_file(const char *path);
+int send_file(int sd, const char *path);
 
 // riceve un file dal peer e lo salva nel percorso specificato da path
 // NOTA: path è il percorso al file, non ad una cartella
-int receive_file(const char *path);
+int receive_file(int sd, const char *path);
 
 // aspetta un messaggio di risposta dal peer, ritorna 0 se "OK"
 // oppure negativo se ci sono stati errori o "NON OK"
 // di solito usata dopo ogni messaggio, non quello della lunghezza del messaggio
-int receive_response();
+int receive_response(int sd);
 
 // manda una risposta al peer, se va tutto bene oppure no
-int send_response(int ok);
+int send_response(int sd, int ok);
 
 // manda un comando testuale al server come "quit" e "compress"
 // str: stringa che contiene il comando
 // esempio: send_command(sd, "exit");
-int send_command(const char *com, const char *arg);
+int send_command(int sd, const char *com, const char *arg);
 
 // riceve due stringhe, la prima sarà il comando e la seconda l'argomento, le
 // immagazzina in *cmd e *arg NOTA: in caso di errore i puntatori NON sono validi e
 // non serve liberare memoria
-int receive_command(char **cmd, char **arg);
+int receive_command(int sd, char **cmd, char **arg);
 
 #endif

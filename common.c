@@ -172,7 +172,7 @@ int send_file(int sd, const char *path) {
 	}
 	// ascolta la risposta del server
 	printf(YELLOW("\tVerifica risposta dal server...\n"));
-	if (receive_response() < 0) {
+	if (receive_response(sd) < 0) {
 		return -1;
 	}
 
@@ -249,14 +249,14 @@ int receive_file(int sd, const char *path) {
 			(recv_tot - file_dim)
 		);
 		remove(path);
-		if (send_response(!OK) < 0) {
+		if (send_response(sd, !OK) < 0) {
 			return -1;
 		}
 		return -1;
 	}
 
 	printf("\tFile %s " YELLOW("di %ld byte") " ricevuto\n", path, recv_tot);
-	if (send_response(OK) < 0) {
+	if (send_response(sd, OK) < 0) {
 		return -1;
 	}
 	return 0;
@@ -352,7 +352,7 @@ int send_command(int sd, const char *com, const char *arg) {
 
 	// ascolta la risposta del server
 	printf(YELLOW("\tVerifica risposta dal server...\n"));
-	if (receive_response() < 0) {
+	if (receive_response(sd) < 0) {
 		return -1;
 	}
 	printf(YELLOW("\tInviati %ld bytes di comando\n"), sent_tot);
@@ -407,7 +407,7 @@ int send_command(int sd, const char *com, const char *arg) {
 
 	// ascolta la risposta del server
 	printf(YELLOW("\tVerifica risposta dal server...\n"));
-	if (receive_response() < 0) {
+	if (receive_response(sd) < 0) {
 		return -1;
 	}
 
@@ -461,7 +461,7 @@ int receive_command(int sd, char **cmd, char **arg) {
 	*cmd = command;
 
 	// comando ricevuto, manda riscontro al peer
-	if (send_response(OK) < 0) {
+	if (send_response(sd, OK) < 0) {
 		return -1;
 	}
 
@@ -514,7 +514,7 @@ int receive_command(int sd, char **cmd, char **arg) {
 		*arg = argument;
 	}
 	// argomento ricevuto, manda riscontro al peer
-	if (send_response(OK) < 0) {
+	if (send_response(sd, OK) < 0) {
 		return -1;
 	}
 	printf(("\tRicezione comando %s \n"), command);
