@@ -63,9 +63,12 @@ int socket_stream(const char *addr_str, int port_no, int *sd, struct sockaddr_in
 	}
 	// conversione dell'indirizzo in formato numerico
 	in_addr_t address;
-	if (inet_pton(AF_INET, addr_str, (void *)&address) < 0) {
+	if (inet_pton(AF_INET, addr_str, (void *)&address) <= 0) {
 		fprintf(
-			stderr, MAGENTA("\tImpossibile convertire l'indirizzo: %s\n"), strerror(errno)
+			stderr,
+			MAGENTA("\tImpossibile convertire l'indirizzo '%s': %s\n"),
+			addr_str,
+			strerror(errno)
 		);
 		return -1;
 	}
