@@ -13,7 +13,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-#include "../common.h"
+#include "common.h"
 
 // abbiamo deciso di mettere sd globale per poter fare la signal(SIGINT, quit);
 int sd = -1;

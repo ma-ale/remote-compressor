@@ -2,28 +2,22 @@ CFLAGS = -g -std=c99 -Wall -Wextra -pedantic
 
 # regole di progetto
 
-rcomp: client/rcomp_client server/rcomp_server
-
-esercizio: server/server_esercizio client/client_esercizio
+rcomp: rcomp_client rcomp_server
 
 # regole file sorgente
 
-client/rcomp_client: client/rcomp_client.o common.o
+rcomp_client: rcomp_client.o common.o
 
-server/rcomp_server: server/rcomp_server.o common.o
+rcomp_server: rcomp_server.o common.o
 
-client/rcomp_client.o: client/rcomp_client.c
+rcomp_client.o: rcomp_client.c common.h
 
-server/rcomp_server.o: server/rcomp_server.c
+rcomp_server.o: rcomp_server.c common.h
 
-common.o: common.c
-
-server/server_esercizio: server/server_esercizio.c
-
-client/client_esercizio: client/client_esercizio.c
+common.o: common.c common.h
 
 # pulisci la cartella di lavoro
 
 clean:
-	rm -f common.o server/rcomp_server server/rcomp_server.o client/rcomp_client client/rcomp_client.o
-	rm -f *.tar.gz *.tar.bz2
+	rm -f common.o rcomp_server rcomp_server.o rcomp_client rcomp_client.o
+	rm -f *.tar.gz *.tar.bz2 folder-*

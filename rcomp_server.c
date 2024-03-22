@@ -14,7 +14,7 @@
 #include <sys/wait.h>
 #include <arpa/inet.h>
 
-#include "../common.h"
+#include "common.h"
 
 static const int OK = 1;
 int				 sd = -1;

@@ -1,16 +1,7 @@
 .vscode/
 
-server/server
-client/client
-
-server/server_esercizio
-client/client_esercizio
-
-server/rcomp_server
-client/rcomp_client
-
-client/provaquit.exe
-client/provaquit
+rcomp_client
+rcomp_server
 
 *.o
 *.exe
