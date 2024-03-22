@@ -21,3 +21,9 @@ common.o: common.c
 server/server_esercizio: server/server_esercizio.c
 
 client/client_esercizio: client/client_esercizio.c
+
+# pulisci la cartella di lavoro
+
+clean:
+	rm -f common.o server/rcomp_server server/rcomp_server.o client/rcomp_client client/rcomp_client.o
+	rm -f *.tar.gz *.tar.bz2
