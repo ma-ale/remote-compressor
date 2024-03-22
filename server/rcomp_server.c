@@ -46,6 +46,27 @@ int compress_folder(const char *dirname, const char *archive_path, char alg) {
 	return 0;
 }
 
+// pulisce tutti i file nella cartella specificata
+int clean_folder(const char *dirname, const char *what) {
+	if (dirname == NULL || what == NULL) {
+		return -1;
+	}
+
+	char  *command;
+	size_t len = strlen(dirname) + strlen(what) + strlen("rm -rf    ") + 4;
+
+	command = malloc(len);
+	if (command == NULL) {
+		return -1;
+	}
+
+	snprintf(command, len, "rm -rf %s/%s", dirname, what);
+	system(command);
+	free(command);
+
+	return 0;
+}
+
 // gestisce il socket di un client
 int process_client(const char *myfolder) {
 	char *cmd = NULL, *arg = NULL;
@@ -176,6 +197,21 @@ int process_client(const char *myfolder) {
 					quit();
 				}
 			}
+
+			if (clean_folder(myfolder, "*")) {
+				fprintf(
+					stderr,
+					MAGENTA("\tERRORE: Impossibile pulire la cartella del processo\n")
+				);
+			}
+			// devo rifarlo per rimuovere i dotfiles
+			if (clean_folder(myfolder, ".*")) {
+				fprintf(
+					stderr,
+					MAGENTA("\tERRORE: Impossibile pulire la cartella del processo\n")
+				);
+			}
+
 			free(archivename);
 			free(archive_path);
 		}
@@ -270,7 +306,7 @@ int main(int argc, char *argv[]) {
 		pid = fork();
 
 		// nome della cartella del figlio
-		char childfolder[64];
+		char childfolder[128];
 
 		if (pid < 0) {
 			fprintf(
@@ -308,9 +344,7 @@ int main(int argc, char *argv[]) {
 			}
 			printf(YELLOW("\tIl processo %d ha terminato\n"), pid);
 			// rimuovi la cartella del figlio se esiste
-			char rm_command[sizeof("rm -rf ") + sizeof(childfolder) + 1];
-			snprintf(rm_command, sizeof(rm_command), "rm -rf %s", childfolder);
-			if (system(rm_command)) {
+			if (clean_folder(childfolder, "")) {
 				fprintf(
 					stderr,
 					RED("\tERRORE: Impossibile eliminare la cartella del figlio\n")
