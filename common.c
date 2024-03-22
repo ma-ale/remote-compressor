@@ -153,7 +153,10 @@ int send_file(int sd, const char *path) {
 	char	buff[CHUNK_SIZE];
 	while (1) {
 		ssize_t bytes_read = read(fileno(file), buff, CHUNK_SIZE);
-		if (bytes_read <= 0) {
+		if (bytes_read < 0) {
+			fprintf(stderr, MAGENTA("\tERRORE: Lettura del file fallita: %s\n"), strerror(errno));
+			return -1;
+		} else if ( bytes_read == 0 ) {
 			break;
 		}
 
@@ -172,6 +175,16 @@ int send_file(int sd, const char *path) {
 		if (sent_tot >= file_dim) {
 			break;
 		}
+	}
+
+	if (sent_tot != file_dim) {
+		fprintf(
+			stderr,
+			MAGENTA("\tERRORE: Invio dei dati incompleto: %ld/%ld bytes inviati\n"),
+			sent_tot,
+			file_dim
+		);
+		return -1;
 	}
 
 	// ascolta la risposta del server
