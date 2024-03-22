@@ -12,7 +12,9 @@ client/rcomp_client
 client/provaquit.exe
 client/provaquit
 
-**/*.o
-**/*.exe
+*.o
+*.exe
 **/folder-*
-**/archivio_compresso.*
+*.tar
+*.gz
+*.bz2
