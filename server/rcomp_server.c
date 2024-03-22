@@ -75,9 +75,11 @@ int process_client(const char *myfolder) {
 		// evitiamo di introdurre memory leak :p
 		if (arg != NULL) {
 			free(arg);
+			arg = NULL;
 		}
 		if (cmd != NULL) {
 			free(cmd);
+			cmd = NULL;
 		}
 
 		if (receive_command(sd, &cmd, &arg) < 0) {
@@ -145,8 +147,8 @@ int process_client(const char *myfolder) {
 				continue;
 			}
 
-			char *archivename;
-			char *archive_path;
+			char *archivename  = NULL;
+			char *archive_path = NULL;
 
 			int e = 0;
 
