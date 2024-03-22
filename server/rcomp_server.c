@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
 	//		argv[1] = porta
 
 	// metto di default porta se argc < 2
-	const char *addr_str = "127.0.0.1";
+	const char *addr_str = "0.0.0.0";
 	int			port_no	 = 1234;
 	// prendi l'indirizzo e la porta da riga di comando
 	if (argc == 2) {
