@@ -34,9 +34,9 @@ void quit() {
 // attraverso la funzione "system()" comprime la cartella dei file del client
 // con l'algoritmo specificato in un archivio chiamato "archivio_compresso.tar.gz"
 // oppure "archivio_compresso.tar.bz2"
-int compress_folder(const char *dirname, const char *archivename, char alg) {
+int compress_folder(const char *dirname, const char *archive_path, char alg) {
 	char cmd[256];
-	snprintf(cmd, sizeof(cmd), "tar -c -%c -f %s %s", alg, archivename, dirname);
+	snprintf(cmd, sizeof(cmd), "tar -c -%c -f %s %s/*", alg, archive_path, dirname);
 
 	printf(YELLOW("\tEsecuzione comando: '%s'\n"), cmd);
 	if (system(cmd) != 0) {
@@ -125,15 +125,32 @@ int process_client(const char *myfolder) {
 			}
 
 			char *archivename;
-			int	  e = 0;
+			char *archive_path;
+
+			int e = 0;
 
 			if (alg[0] != 'z' && alg[0] != 'j') {
 				fprintf(stderr, MAGENTA("\tERRORE: Algoritmo non conosciuto\n"));
 				continue;
 			}
 
+			// calcola il nome e l'estensione dell'archivio
 			get_filename(alg[0], &archivename);
-			e = compress_folder(myfolder, archivename, alg[0]);
+
+			// scrivi il percorso dell'archivio
+			size_t archive_path_len;
+			archive_path_len = strlen(archivename) + strlen(myfolder) + 4;
+			archive_path	 = malloc(archive_path_len);
+			if (archive_path == NULL) {
+				fprintf(stderr, MAGENTA("\tERRORE: malloc(): %s\n"), strerror(errno));
+				if (send_response(sd, !OK) < 0) {
+					return -1;
+				}
+				continue;
+			}
+			snprintf(archive_path, archive_path_len, "%s/%s", myfolder, archivename);
+
+			e = compress_folder(myfolder, archive_path, alg[0]);
 
 			if (e < 0) {
 				fprintf(
@@ -148,7 +165,7 @@ int process_client(const char *myfolder) {
 				return -1;
 			}
 
-			e = send_file(sd, archivename);
+			e = send_file(sd, archive_path);
 			if (e < 0) {
 				fprintf(
 					stderr,
@@ -160,6 +177,7 @@ int process_client(const char *myfolder) {
 				}
 			}
 			free(archivename);
+			free(archive_path);
 		}
 	}
 
