@@ -19,6 +19,7 @@
 static const int OK = 1;
 int				 sd = -1;
 
+// chiude la connessione e termina il processo
 void quit() {
 	if (close(sd) < 0) {
 		fprintf(
@@ -67,12 +68,13 @@ int clean_folder(const char *dirname, const char *what) {
 	return 0;
 }
 
-// gestisce il socket di un client
+// gestisce la connessione con un solo client
 int process_client(const char *myfolder) {
 	char *cmd = NULL, *arg = NULL;
 
 	while (1) {
-		// evitiamo di introdurre memory leak :p
+		// evitiamo di introdurre memory leak :p, arg e cmd ci vengono inviati dal client,
+		// le stringhe vengono allocate ogni volta, quindi le devo deallocare
 		if (arg != NULL) {
 			free(arg);
 			arg = NULL;
@@ -82,6 +84,8 @@ int process_client(const char *myfolder) {
 			cmd = NULL;
 		}
 
+		// aspetta fino a quando non riceve un comando, ritorna il comando e l'argomento
+		// se presente
 		if (receive_command(sd, &cmd, &arg) < 0) {
 			fprintf(
 				stderr,
@@ -94,6 +98,7 @@ int process_client(const char *myfolder) {
 			continue;
 		}
 
+		// se il client segnala il termine della connessione facciamo lo stesso
 		if (strcmp(cmd, "quit") == 0) {
 			send_response(sd, OK);
 			quit();
@@ -109,7 +114,7 @@ int process_client(const char *myfolder) {
 				continue;
 			}
 
-			// crea una cartella temporanea del processo
+			// crea una cartella temporanea del processo, se esiste già bene
 			int e = mkdir(myfolder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 			if (e < 0 && errno != EEXIST) {
 				fprintf(
@@ -121,9 +126,13 @@ int process_client(const char *myfolder) {
 			}
 			// entra nella cartella
 			chdir(myfolder);
+			// riceve il file
 			e = receive_file(sd, filename);
+			// torna nella cartella precedente
 			chdir("..");
 
+			// se il trasferimento del file non è andato a buon file segnalalo, se
+			// l'errore era di connessione termina il processo
 			if (e < 0) {
 				fprintf(
 					stderr,
@@ -152,12 +161,13 @@ int process_client(const char *myfolder) {
 
 			int e = 0;
 
+			// controllo che l'algoritmo sia valido
 			if (alg[0] != 'z' && alg[0] != 'j') {
 				fprintf(stderr, MAGENTA("\tERRORE: Algoritmo non conosciuto\n"));
 				continue;
 			}
 
-			// calcola il nome e l'estensione dell'archivio
+			// calcola il nome e l'estensione dell'archivio, alloca memoria
 			get_filename(alg[0], &archivename);
 
 			// scrivi il percorso dell'archivio
@@ -173,8 +183,12 @@ int process_client(const char *myfolder) {
 			}
 			snprintf(archive_path, archive_path_len, "%s/%s", myfolder, archivename);
 
+			// comprime la cartella del processo, l'archivio finisce nella cartella del
+			// processo
 			e = compress_folder(myfolder, archive_path, alg[0]);
 
+			// se la compressione non è andata a buon fine lo devo segnalare al client
+			// così non rimane ad aspettare il file
 			if (e < 0) {
 				fprintf(
 					stderr, MAGENTA("\tERRORE: Impossibile comprimere %s\n"), myfolder
@@ -188,6 +202,7 @@ int process_client(const char *myfolder) {
 				return -1;
 			}
 
+			// invia l'archivio
 			e = send_file(sd, archive_path);
 			if (e < 0) {
 				fprintf(
@@ -200,13 +215,15 @@ int process_client(const char *myfolder) {
 				}
 			}
 
+			// una volta che l'archivio è stato inviato elimino tutti i file ricevuti, con
+			// la prima chiamata a clean_folder elimino tutti i file normali
 			if (clean_folder(myfolder, "*")) {
 				fprintf(
 					stderr,
 					MAGENTA("\tERRORE: Impossibile pulire la cartella del processo\n")
 				);
 			}
-			// devo rifarlo per rimuovere i dotfiles
+			// con la seconda chiamata elimino i file nascosti
 			if (clean_folder(myfolder, ".*")) {
 				fprintf(
 					stderr,
@@ -214,6 +231,7 @@ int process_client(const char *myfolder) {
 				);
 			}
 
+			// dealloco le stringhe che ho allocato nel frattempo
 			free(archivename);
 			free(archive_path);
 		}
@@ -255,12 +273,13 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	// ignora la sigpipe
+	// ignora la sigpipe, causa problemi su windows
 	signal(SIGPIPE, SIG_IGN);
 
 	printf(YELLOW("\tSocket %d associato a %s:%d\n"), listen_sd, addr_str, port_no);
 
 	// --- LISTENING --- //
+	// creo una coda di 10 connessioni max
 	if (listen(listen_sd, 10) < 0) {
 		fprintf(
 			stderr,
@@ -276,6 +295,8 @@ int main(int argc, char *argv[]) {
 		// --- ATTESA DI CONNESSIONE --- //
 		printf("\tIn attesa di connessione sulla porta %d\n", port_no);
 		socklen_t client_addr_len = sizeof(client_addr);
+
+		// aspetta le connessioni
 		sd = accept(listen_sd, (struct sockaddr *)&client_addr, &client_addr_len);
 		if (sd < 0) {
 			fprintf(
@@ -286,7 +307,8 @@ int main(int argc, char *argv[]) {
 			continue;
 		}
 
-		// conversione dell'indirizzo in formato numerico
+		// conversione dell'indirizzo in formato numerico, serve per stampare l'indirizzo
+		// del client
 		const char *res = inet_ntop(
 			AF_INET, &client_addr.sin_addr.s_addr, client_addr_str, INET_ADDRSTRLEN
 		);
@@ -304,6 +326,9 @@ int main(int argc, char *argv[]) {
 			);
 		}
 
+		// chiamo la fork per gestire la connessione, con processi diversi potrei gestire
+		// diverse connessioni contemporaneamente (anche se non viene fatto atm)
+		// inoltre uso il pid per generare il nome della cartella della sessione
 		pid_t pid;
 		pid = fork();
 
@@ -311,6 +336,7 @@ int main(int argc, char *argv[]) {
 		char childfolder[128];
 
 		if (pid < 0) {
+			// se ho avuto un errore nella fork chiudo tutto ed esco
 			fprintf(
 				stderr,
 				MAGENTA("\tERRORE: Impossibile creare un processo figlio: %s\n"),
@@ -321,22 +347,36 @@ int main(int argc, char *argv[]) {
 			exit(EXIT_FAILURE);
 		} else if (pid == 0) {
 			// processo figlio
+
+			// registro il gestore di interrupt
 			signal(SIGINT, quit);
+
+			// genero il nome della cartella della sessione
 			snprintf(childfolder, sizeof(childfolder), "folder-%d", getpid());
+
+			// chiamo la funzione che gestisce la connessione con il client
 			if (process_client(childfolder) < 0) {
 				fprintf(stderr, RED("\tERRORE: Processo figlio uscito con errore\n"));
 				exit(EXIT_FAILURE);
 			}
 
+			// arrivo qui quando il client manda "quit", tutti felici termino il processo
+			// senza errori
 			exit(EXIT_SUCCESS);
 		} else {
 			// processo genitore
+
+			// anche il processo genitore deve conoscere il nome della cartella della
+			// sessione per essere in grado di eliminarla
 			snprintf(childfolder, sizeof(childfolder), "folder-%d", pid);
 			printf(
 				YELLOW("\tCreato processo figlio pid: %d, childfolder: '%s'\n"),
 				pid,
 				childfolder
 			);
+
+			// in questo momento supporto solo una connessione alla volta quindi aspetto
+			// con pazienza che il processo figlio termini
 			if (wait(NULL) < 0) {
 				fprintf(
 					stderr,
@@ -345,7 +385,8 @@ int main(int argc, char *argv[]) {
 				);
 			}
 			printf(YELLOW("\tIl processo %d ha terminato\n"), pid);
-			// rimuovi la cartella del figlio se esiste
+
+			// rimuovi la cartella del figlio, se esiste
 			if (clean_folder(childfolder, "")) {
 				fprintf(
 					stderr,
